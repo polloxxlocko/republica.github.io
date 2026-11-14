@@ -12,6 +12,7 @@ import { addNews } from '../systems/news';
 import { pushIntel } from '../career/knowledge';
 import { remember } from '../systems/characters';
 import { REGION_BY_ID } from '../data/geography';
+import { contradictions } from '../dialogue/positions';
 import type { InterviewInvite, InterviewQuestion, InterviewStyle, Journalist } from './types';
 import { OUTLETS, OUTLET_BY_ID, credibilityOf, perceivedLean, reachOf } from './registry';
 import { currentISO } from '../systems/util';
@@ -85,7 +86,10 @@ export function buildQuestions(s: GameState, rng: Rng, j: Journalist): Interview
   const appr = Math.round(s.opinion.presidentialApproval);
   pool.push(q('gobierno', 'Gobierno', `Con una aprobación presidencial cercana al ${appr}% en las encuestas, ¿cómo evalúa al Gobierno?`));
   pool.push(q('region', 'Territorio', `¿Cuál es el principal problema de ${REGION_BY_ID[me.regionId].name} y qué haría usted?`));
+  // contradicciones registradas entre lo dicho y lo hecho: la prensa incisiva no las deja pasar
+  const contra = contradictions(s).slice(-1)[0];
   const out: InterviewQuestion[] = [];
+  if (contra && (hard || rng.chance(0.4))) out.push(q('contradiccion', 'Coherencia', `${contra.before.source[0].toUpperCase()}${contra.before.source.slice(1)} se mostró ${contra.before.stance > 0 ? 'a favor de' : 'en contra de'} ${contra.label}; después, ${contra.after.source}, ${contra.after.stance > 0 ? 'lo respaldó' : 'se opuso'}. ¿Qué cambió?`));
   while (out.length < 3 && pool.length) out.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
   return out;
 }
@@ -109,6 +113,7 @@ export function answerInterview(s: GameState, rng: Rng, inviteId: string, index:
   const qq = inv.questions[index]; if (!qq || qq.answer) return 'Pregunta no disponible.';
   const j = st.journalists.find((x) => x.id === inv.journalistId)!;
   qq.answer = answer; qq.result = scoreAnswer(s, rng, j, qq);
+  if (qq.id.startsWith('partido') && (answer === 'linea' || answer === 'propia') && s.dialogue) s.dialogue.positions.push({ week: s.week, topic: 'linea_partido', stance: answer === 'linea' ? 1 : -1, source: `entrevista:${inviteId}` });
   // repregunta: periodistas incisivos no dejan pasar una evasiva
   if (answer === 'evadir' && !qq.followUp && (j.style === 'incisivo' || j.style === 'confrontacional' || rng.chance(0.3))) {
     inv.questions.splice(index + 1, 0, q(`${qq.id}_re`, qq.topic, `Insisto: no respondió. ${qq.text}`, true));

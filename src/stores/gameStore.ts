@@ -10,7 +10,7 @@ import type { NewGameConfig } from '../game/scenarios/chile2026';
 import { deleteSave, listSaves, loadGame, saveGame, rawSave, type SaveMeta } from '../persistence/db';
 import { deserialize, serialize } from '../persistence/saveFormat';
 
-export type Screen = 'menu' | 'nuevo' | 'panel' | 'carrera' | 'acciones' | 'mapa' | 'partidos' | 'congreso' | 'elecciones' | 'gobierno' | 'economia' | 'noticias' | 'historial' | 'partida' | 'noche' | 'creditos' | 'encuestas';
+export type Screen = 'menu' | 'nuevo' | 'panel' | 'carrera' | 'acciones' | 'mapa' | 'partidos' | 'congreso' | 'elecciones' | 'gobierno' | 'economia' | 'noticias' | 'historial' | 'partida' | 'noche' | 'creditos' | 'encuestas' | 'conversaciones';
 
 export interface Toast { id: number; text: string; tone: 'info' | 'ok' | 'warn' | 'error' }
 
@@ -93,8 +93,10 @@ export const useGame = create<Store>((set, get) => ({
         g = r.state;
         set({ progress: (i + 1) / weeks });
         if (r.newResults.length) newResult = r.newResults[r.newResults.length - 1];
+        const invNew = (g.dialogue?.invitations ?? []).filter((x) => x.status === 'pendiente' && x.week === g.week);
+        if (invNew.length) get().toast(`Te buscan: ${invNew[0].motive} (Conversaciones)`, 'warn');
         if (r.newOpportunities.length) get().toast(`Nueva oportunidad: ${g.career.opportunities.find((o) => o.id === r.newOpportunities[0])?.title ?? ''}`, 'warn');
-        if (stopOnEvent && (r.newDecisions.length || r.newResults.length || r.newOpportunities.length) && i < weeks - 1) break;
+        if (stopOnEvent && (r.newDecisions.length || r.newResults.length || r.newOpportunities.length || invNew.length) && i < weeks - 1) break;
         if (i % 2 === 1) { set({ game: g }); await yieldUI(); }
       }
       set({ game: g });

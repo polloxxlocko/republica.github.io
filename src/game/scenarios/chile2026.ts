@@ -28,6 +28,7 @@ import { generateCalendar, listIdOf } from '../systems/elections';
 import { addHistory, ideoDistance, pairKey, strongholdFactor, zeroIdeology } from '../systems/util';
 import { initPolling } from '../polling';
 import { initMedia } from '../media';
+import { emptyDialogue } from '../dialogue';
 import { weeklyPlayer } from '../systems/player';
 import { addTerritory, bio, emptyCareer, first, homeCut } from '../career/capital';
 import { generateAgenda } from '../career/agendaWeek';
@@ -295,6 +296,7 @@ export function createChile2026(cfg: NewGameConfig): GameState {
   s.history.push({ id: 'h0', week: 0, date: START_DATE, category: 'gobierno', title: 'Comienza la partida: Chile, noviembre de 2026', detail: `Gobierno de ${fullName(pres)} (Republicanos), en ejercicio desde el 11 de marzo de 2026. La coalición de gobierno de la partida es una configuración simulada. ${DISCLAIMER}`, importance: 5 });
 
   initMedia(s, rng);
+  s.dialogue = emptyDialogue();
   // Jugador
   createPlayer(s, rng, cfg, diff.startFunds);
   generateAgenda(s, rng);

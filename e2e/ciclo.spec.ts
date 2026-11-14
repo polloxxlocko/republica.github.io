@@ -74,6 +74,11 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
     await page.getByRole('tab', { name: 'Perfiles de medios' }).click();
     await expect(page.locator('#perfil-medio')).toHaveText('El Mercurio');
     await expect(page.getByText(/Informe 2026: Consumo de Noticias/).first()).toBeVisible();
+    // Conversaciones: agenda, compromisos, relaciones e historial (Archivo de Poder)
+    await page.getByRole('navigation').getByRole('button', { name: 'Conversaciones', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Conversaciones' })).toBeVisible();
+    await expect(page.getByText('Te buscan')).toBeVisible();
+    for (const t of ['Compromisos', 'Relaciones', 'Historial']) await page.getByRole('tab', { name: t }).click();
     // Detalle de partido y hemiciclo
     await page.getByRole('navigation').getByRole('button', { name: 'Partidos', exact: true }).click();
     await page.getByTestId('ficha-UDI').click();

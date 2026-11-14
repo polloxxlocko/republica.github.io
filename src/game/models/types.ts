@@ -850,6 +850,8 @@ export interface GameState {
   polling?: import('../polling/types').PollingState;
   /** Ecosistema de medios (cobertura simulada, periodistas ficticios, entrevistas) */
   media?: import('../media/types').MediaState;
+  /** Conversaciones, relaciones multidimensionales, memoria política y compromisos */
+  dialogue?: import('../dialogue/types').DialogueState;
   news: NewsItem[];
   history: HistoryEntry[];
   pending: PendingDecision[];
