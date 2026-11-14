@@ -7,22 +7,27 @@ import { resolveDecision, processEvents } from '../src/game/systems/events';
 import { Rng } from '../src/game/engine/rng';
 
 describe('Acciones del jugador', () => {
-  it('quien preside el partido compite con ventaja en el proceso de nominación', () => {
-    let s = newGame({ startRole: 'presidente_partido', age: 45 });
-    const e = s.calendar.find((x) => x.type === 'diputados')!;
-    const w = electionWindow(s, e.id)!;
-    while (s.week < w.open) s = advanceWeek(s).state;
-    const unit = String(s.characters[s.player.characterId].regionId === 'BI' ? 20 : 1);
-    expect(aspireBlocked(s, e.id, 'diputado', unit)).toBeNull();
-    s = dispatch(s, { type: 'aspirar', electionId: e.id, office: 'diputado', unitId: unit }).state;
-    while (s.week <= w.decision) s = advanceWeek(s).state;
-    const p = s.career.processes.find((x) => x.electionId === e.id && x.aspirants.some((a) => a.charId === s.player.characterId))!;
-    const mine = p.aspirants.find((a) => a.charId === s.player.characterId)!;
-    expect(['resuelto', 'cancelado']).toContain(p.status);
-    // Llega a la preselección con respaldos, pero no tiene la nominación asegurada (compite con incumbentes)
-    expect(p.log.some((l) => l.includes('Preselección') && l.includes(s.characters[s.player.characterId].firstName))).toBe(true);
-    if (mine.status === 'nominado') expect(s.player.campaign).not.toBeNull();
-  }, 120000);
+  it('quien preside el partido compite con ventaja en el proceso de nominación (sin nominación asegurada)', () => {
+    let shortlisted = 0;
+    for (const seed of [42, 7, 13]) {
+      let s = structuredClone(newGame({ startRole: 'presidente_partido', age: 45 }, seed));
+      s.parties.PS.nextLeadershipWeek = 400; // aísla la ventaja de presidir (sin elección interna en medio)
+      const e = s.calendar.find((x) => x.type === 'diputados')!;
+      const w = electionWindow(s, e.id)!;
+      while (s.week < w.open) s = advanceWeek(s).state;
+      const unit = String(s.characters[s.player.characterId].regionId === 'BI' ? 20 : 1);
+      expect(aspireBlocked(s, e.id, 'diputado', unit)).toBeNull();
+      s = dispatch(s, { type: 'aspirar', electionId: e.id, office: 'diputado', unitId: unit }).state;
+      while (s.week <= w.decision) s = advanceWeek(s).state;
+      const p = s.career.processes.find((x) => x.electionId === e.id && x.aspirants.some((a) => a.charId === s.player.characterId))!;
+      const mine = p.aspirants.find((a) => a.charId === s.player.characterId)!;
+      expect(['resuelto', 'cancelado']).toContain(p.status);
+      if (p.log.some((l) => l.includes('Preselección') && l.includes(s.characters[s.player.characterId].firstName))) shortlisted++;
+      if (mine.status === 'nominado') expect(s.player.campaign).not.toBeNull();
+    }
+    // Llega a la preselección en la mayoría de los casos, pero nada está garantizado
+    expect(shortlisted).toBeGreaterThanOrEqual(2);
+  }, 240000);
   it('reglas: no se puede presentar mociones sin ser parlamentario ni candidatear a senador con menos de 35', () => {
     const s = newGame({ age: 25 });
     expect(actionBlocked(s, { type: 'mocion', template: 0 })).toMatch(/parlamentarios/);

@@ -18,6 +18,12 @@ type Migration = (g: Record<string, unknown>) => Record<string, unknown>;
 /** Migraciones secuenciales: MIGRATIONS[n] convierte de la versión n a n+1. */
 export const MIGRATIONS: Record<number, Migration> = {
   1: (g) => ({ ...g, campaignSpend: g.campaignSpend ?? {}, presidentialCandidates: g.presidentialCandidates ?? {} }),
+  6: (g) => {
+    // v6 → v7: agenda semanal, equipo propio y presencia digital
+    const c = (g.career ?? {}) as Record<string, unknown>;
+    const cap = (c.capital ?? {}) as Record<string, unknown>;
+    return { ...g, career: { ...c, team: c.team ?? [], agenda: c.agenda ?? { week: -1, offers: [], used: [], lastDefs: [] }, capital: { ...cap, digital: cap.digital ?? 0 } } };
+  },
   5: (g) => {
     // v5 → v6: información imperfecta, situaciones latentes, balances electorales, contactos, hitos y agenda personal
     const c = (g.career ?? emptyCareer()) as unknown as Record<string, unknown>;

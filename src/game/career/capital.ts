@@ -29,11 +29,11 @@ export interface PoliticalCapital {
 export function emptyCareer(): CareerState {
   return {
     origin: { education: '', occupation: '', traits: [], interests: [], organization: null },
-    capital: { territory: {}, organization: 5, rejection: 10 },
+    capital: { territory: {}, organization: 5, rejection: 10, digital: 0 },
     processes: [], opportunities: [], commitments: [], bio: [], repHistory: [],
     stats: { won: 0, lost: 0, nomWon: 0, nomLost: 0, parties: [], laws: 0, oppAccepted: 0, oppRejected: 0, peakOffice: null },
     lastProgressWeek: 0, cooldowns: {},
-    intel: [], latent: [], sources: {}, reviews: [], contacts: {}, firsts: {}, workMode: 'parcial', pressure: 0,
+    intel: [], latent: [], sources: {}, reviews: [], contacts: {}, firsts: {}, workMode: 'parcial', pressure: 0, team: [], agenda: { week: -1, offers: [], used: [], lastDefs: [] },
   };
 }
 

@@ -753,9 +753,25 @@ export interface ElectionReview {
   effects: string[];           // consecuencias aplicadas (experiencia, relaciones...)
 }
 
+/** Acción situacional ofrecida en la agenda de una semana (cambia cada semana). */
+export interface AgendaOffer {
+  id: string;
+  defId: string;
+  category: string;
+  title: string;
+  desc: string;
+  cost: number;          // PA
+  funds: number;         // MM$
+  risk: 'bajo' | 'medio' | 'alto';
+  ctx: Record<string, string | number>;
+}
+
+export type TeamRole = 'prensa' | 'territorial' | 'tecnico' | 'digital' | 'finanzas';
+export interface TeamMember { id: string; role: TeamRole; name: string; since: number; salary: number; skill: number }
+
 export interface CareerState {
   origin: CareerOrigin;
-  capital: { territory: Record<string, number>; organization: number; rejection: number };
+  capital: { territory: Record<string, number>; organization: number; rejection: number; digital?: number };
   processes: NominationProcess[];
   opportunities: Opportunity[];
   commitments: Commitment[];
@@ -772,6 +788,8 @@ export interface CareerState {
   contacts: Record<string, { metWeek: number; context: string; lastOffice: string | null }>;
   firsts: Record<string, { week: number; text: string }>;
   workMode: 'completa' | 'parcial' | 'dedicacion';
+  agenda?: { week: number; offers: AgendaOffer[]; used: string[]; lastDefs: string[] };
+  team?: TeamMember[];
   pressure: number;            // presión por éxito prematuro (oculta; se muestra cualitativamente)
 }
 

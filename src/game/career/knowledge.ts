@@ -116,6 +116,8 @@ export function situationReport(s: GameState): SituationLine[] {
   out.push({ area: 'Credibilidad', basis: 'percepcion', tone: cap.credibility > 58 ? 'good' : cap.credibility < 42 ? 'bad' : 'neutral', text: pick(perceive(s, 'cred', cap.credibility, 8), [[38, 'Se duda de tu palabra'], [52, 'Tu palabra pesa como la de cualquiera'], [66, 'Tienes fama de cumplir lo que dices']], 'Tu palabra es un activo reconocido') });
   out.push({ area: 'Preparación', basis: 'propia', tone: cap.prestige > 55 ? 'good' : 'neutral', text: pick(cap.prestige, [[30, 'Aún no tienes un perfil técnico reconocido'], [50, 'Manejas tus temas con solvencia'], [70, 'Eres consultado/a por tu preparación técnica']], 'Tu prestigio técnico trasciende a tu sector') });
   out.push({ area: 'Organización', basis: 'propia', tone: cap.organization > 40 ? 'good' : 'neutral', text: pick(cap.organization, [[15, 'No tienes equipo propio'], [35, 'Cuentas con un pequeño grupo de colaboradores'], [60, 'Tienes un equipo y voluntariado estables']], 'Tu organización propia es capaz de sostener una campaña') });
+  const dg = s.career.capital.digital ?? 0;
+  out.push({ area: 'Redes sociales', basis: 'publica', tone: dg > 35 ? 'good' : 'neutral', text: pick(dg, [[5, 'Casi no tienes presencia en redes'], [15, 'Tienes una comunidad pequeña en redes'], [35, 'Tus publicaciones circulan con regularidad'], [60, 'Tienes una presencia digital influyente']], 'Eres una de las voces más seguidas en redes') });
   if (s.career.pressure > 25) out.push({ area: 'Expectativas', basis: 'percepcion', tone: 'bad', text: s.career.pressure > 55 ? 'Las expectativas sobre ti son muy altas y cada error se amplifica' : 'Tu rápido ascenso genera expectativas y miradas atentas' });
   return out;
 }

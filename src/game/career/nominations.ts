@@ -68,7 +68,7 @@ export function aspirantBase(s: GameState, c: Character, p: NominationProcess): 
   // Para la IA, el arraigo se infiere de su trayectoria: quien ejerce o ejerció cargos en el territorio tiene raíces
   const ROOTS: Partial<Record<OfficeType, number>> = { diputado: 55, senador: 55, alcalde: 58, gobernador: 50, concejal: 38, dirigente_territorial: 28, seremi: 25 };
   const roots = Math.max(0, ...c.offices.map((o) => ROOTS[o.type] ?? 0), ...c.pastOffices.map((o) => (ROOTS[o.type] ?? 0) * 0.7));
-  const local = p.office === 'presidente' ? c.rep.reconocimiento : c.isPlayer ? territorialIn(s, cuts) : clamp(Math.max((c.rep.reconocimientoRegional[c.regionId] ?? c.rep.reconocimiento * 0.6) * 0.8, roots), 0, 100);
+  const local = p.office === 'presidente' ? c.rep.reconocimiento : c.isPlayer ? Math.max(territorialIn(s, cuts), (c.rep.reconocimientoRegional[c.regionId] ?? c.rep.reconocimiento * 0.6) * 0.8) : clamp(Math.max((c.rep.reconocimientoRegional[c.regionId] ?? c.rep.reconocimiento * 0.6) * 0.8, roots), 0, 100);
   const infl = partyInfluenceOf(s, c); const fac = factionSupportOf(s, c);
   const rejection = c.isPlayer ? s.career.capital.rejection : 15;
   const incumbent = c.offices.some((o) => o.type === p.office && (o.districtId === undefined || String(o.districtId) === p.unitId)) ? 18 : 0;

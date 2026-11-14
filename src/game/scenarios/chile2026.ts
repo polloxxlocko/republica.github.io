@@ -29,6 +29,7 @@ import { addHistory, ideoDistance, pairKey, strongholdFactor, zeroIdeology } fro
 import { weeklyPolls } from '../systems/polls';
 import { weeklyPlayer } from '../systems/player';
 import { addTerritory, bio, emptyCareer, first, homeCut } from '../career/capital';
+import { generateAgenda } from '../career/agendaWeek';
 import { placeBoards, realLeaderFor, realMinisters, realPresident, realSeatsFor, seatHolder } from './realCast';
 import { COVERAGE } from '../../data/characters/politicalCareers';
 import { REAL_DATA_CONSULTED } from '../../data/characters/historicalSources';
@@ -36,7 +37,7 @@ import { ORGANIZATIONS } from '../career/labels';
 export { ORGANIZATIONS };
 import { fillVacancies } from '../systems/parliament';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export type Profession = 'estudiante' | 'oficio' | 'comercio' | 'abogacia' | 'economia' | 'docencia' | 'ingenieria' | 'medicina' | 'dirigencia_social' | 'periodismo' | 'empresa';
 export const PROFESSIONS: Record<Profession, { label: string; bonus: Partial<Attributes>; funds?: number }> = {
@@ -294,6 +295,7 @@ export function createChile2026(cfg: NewGameConfig): GameState {
 
   // Jugador
   createPlayer(s, rng, cfg, diff.startFunds);
+  generateAgenda(s, rng);
   updateIntention(s);
   weeklyPolls(s, rng);
   weeklyPlayer(s);

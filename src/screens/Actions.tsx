@@ -12,6 +12,7 @@ import { situationReport } from '../game/career/knowledge';
 import { accessBlocked } from '../game/career/access';
 import { hasPaidOffice } from '../game/systems/player';
 import { actionFatigue } from '../game/systems/player';
+import { TeamPanel, WeeklyAgenda } from '../components/WeeklyAgenda';
 
 function ActionCard({ a, title, desc, children }: { a: PlayerAction; title?: string; desc: string; children?: ReactNode }) {
   const { game: g, act } = useGame();
@@ -59,6 +60,8 @@ export function Actions() {
         <div><div className="eyebrow">Acciones de la semana</div><h1 className="font-display text-2xl font-bold">¿En qué inviertes tu tiempo?</h1></div>
         <div className="text-sm text-ink-300">Puntos de acción: <b className="font-mono text-gold-300">{g.player.actionPoints}/{g.player.maxActionPoints}</b> · Acciones ya realizadas: {g.player.actionsThisWeek.length}</div>
       </div>
+
+      <WeeklyAgenda />
 
       {!hasPaidOffice(c) && (
         <Panel title="Tu semana: trabajo y política">
@@ -195,6 +198,8 @@ export function Actions() {
           <p className="mt-2 text-xs text-ink-400">Gabinete, políticas públicas, urgencias y vetos se gestionan en las pantallas Gobierno y Congreso.</p>
         </Panel>
       )}
+
+      <TeamPanel />
 
       <Panel title="Retiro">
         <p className="text-sm text-ink-400">Puedes poner fin a tu carrera. {charName(g, c.id)} quedará en la historia de la partida.</p>

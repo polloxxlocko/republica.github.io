@@ -14,6 +14,37 @@ Solo controlas a tu personaje. No tienes autoridad más allá de tu cargo, ni in
 4. **Nominaciones**: manifestar interés no te hace candidato/a (ver abajo).
 5. **Instituciones**: cada cargo cambia lo que haces cada semana (ver «Cada cargo cambia el juego»).
 
+## Agenda semanal dinámica
+
+Además de las acciones permanentes, cada semana aparece una **agenda** distinta: de 5 a 9 actividades situacionales (más con un cargo relevante, con un/a coordinador/a territorial o en campaña), sorteadas entre un catálogo de 80 (`src/game/career/agendaWeek.ts`). Tipos de actividad:
+
+| Categoría | Ejemplos |
+|---|---|
+| Territorio | feria libre, puerta a puerta en una comuna vecina, cabildo, operativo social, campamento, olla común, club deportivo, recorrido rural, bomberos |
+| Medios | radio regional, matinal de TV, columna, carta al director, podcast, conferencia de prensa, entrevista de fondo, foro universitario |
+| Redes sociales | video corto, transmisión en vivo, desmentir una información falsa, pauta pagada, hilo explicativo, tendencia viral |
+| Partido | consejo regional, taller de formación, cena de recaudación, juventud, documento programático, gira por sedes, actividad de una figura del partido |
+| Sociedad civil | sindicato, gremio de pymes, organizaciones ambientales, comunidades religiosas, seminario académico, pueblos originarios, colegios profesionales, comunidad migrante, almuerzo con empresarios |
+| Tu cargo | fiscalizar un contrato (concejo), inaugurar obras y cuenta pública (alcaldía), reunión con alcaldes (gobernación), proyecto de resolución, comisión en terreno y bancada (Congreso), visita a terreno (Ejecutivo) |
+| Vida personal | descanso (reduce la fatiga y la presión), curso, entrenamiento de vocería, deporte, libro, voluntariado |
+| Campaña | brigadas, caravana, debate de candidaturas, spot, apoderados de mesa, cierre de campaña |
+| Internacional | seminario en el extranjero, delegación parlamentaria |
+| Fechas especiales | verano y fiestas costumbristas, inicio del año escolar, 8 de marzo, 1 de mayo, Cuenta Pública (1 de junio), solsticio de invierno en el sur, Fiestas Patrias, Navidad, aniversario comunal |
+| Contingencia | encuesta propia, acompañar la visita de una autoridad (crea un contacto), tomar posición sobre un proyecto de ley, ir a terreno en una crisis, mesa de diálogo por el malestar regional |
+| Equipo | personas disponibles para sumarse a tu equipo |
+
+Reglas del sorteo: solo entran las actividades cuyas condiciones se cumplen (cargo, región, partido, fecha, crisis, proyectos, campaña, recursos). Ninguna actividad de la semana anterior se repite. Cada categoría ya elegida pesa menos, para dar variedad. Las fechas especiales tienen más peso en su ventana. Cada actividad se puede hacer una vez y vence al terminar la semana. El resultado depende de tus atributos y tu equipo, con un riesgo indicado (bajo, medio o alto).
+
+**Acciones permanentes que dependen de la semana**: las entrevistas exigen que un medio te invite (más probable con reconocimiento o jefe/a de prensa). Los debates requieren una invitación, la mediación requiere un conflicto local, y un acto exige lugar y permisos. La disponibilidad es determinista dentro de la semana y cambia a la siguiente.
+
+## Equipo propio
+
+Desde la agenda puedes sumar hasta 5 personas: jefe/a de prensa, coordinador/a territorial, asesor/a técnico/a, encargado/a de redes y encargado/a de finanzas. Cada una cobra honorarios semanales (0,8 a 1,3 MM$), aporta un efecto semanal (organización y arraigo, prestigio, presencia digital, reconocimiento o recursos) y mejora las actividades de su área. Si no puedes pagar, la persona se va. También puedes prescindir de alguien.
+
+## Presencia digital
+
+Es una dimensión nueva del capital político (0 a 100). Crece con las acciones en redes y con un/a encargado/a de redes, aporta reconocimiento y llega a los jóvenes. Se desgasta (−1,5% semanal) si no se alimenta, y aparece en la lectura de tu situación.
+
 ## Creación de personaje
 
 Nombre y apellidos, género (para tratamientos), edad (18 a 70), región y comuna de residencia (las 346 comunas), educación, ocupación inicial, hasta dos rasgos personales, hasta tres intereses de política, una experiencia previa limitada (ninguna, o dirigencia estudiantil o vecinal), 12 puntos de atributos (la experiencia no se compra) y una ideología de 8 ejes. La afiliación inicial puede ser un partido (como militante de base), independiente u organización comunitaria (junta de vecinos, federación estudiantil, sindicato, agrupación ambiental, gremio de pymes, comité de vivienda o club). La organización da un rol de dirigente social y más arraigo inicial en tu comuna.

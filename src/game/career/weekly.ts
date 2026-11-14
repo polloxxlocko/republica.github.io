@@ -13,6 +13,7 @@ import { EXTRA_DEFS } from './agenda';
 import { designateReplacement, weeklyLatent } from './latent';
 import { trackContacts, verifyIntel, weeklyIntel } from './knowledge';
 import { reviewElection } from './review';
+import { generateAgenda, weeklyTeamAndDigital } from './agendaWeek';
 import { first } from './capital';
 import { newId } from '../systems/util';
 
@@ -46,6 +47,8 @@ export function weeklyCareer(s: GameState, rng: Rng): void {
   weeklyIntel(s, rng);
   if (s.week % 4 === 0) trackContacts(s);
   processOpportunities(s, rng, EXTRA_DEFS);
+  weeklyTeamAndDigital(s);
+  generateAgenda(s, rng);
   // Cargos: detectar inicios y términos
   const now = c.offices.map((o) => o.type);
   const before = s.career.lastOffices ?? [];
