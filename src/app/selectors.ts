@@ -8,7 +8,7 @@ import { leftRight } from '../game/systems/util';
 import { REGION_BY_ID } from '../game/data/geography';
 import { MINISTRY_BY_ID } from '../game/data/institutions';
 
-export const IND = { id: 'IND', short: 'IND', name: 'Independientes', color: '#8a94ab' };
+export const IND = { id: 'IND', short: 'IND', name: 'Independientes', color: '#5C6369' };
 
 export function partyColor(g: GameState, id: string | null | undefined): string {
   if (!id || id === 'IND') return IND.color;

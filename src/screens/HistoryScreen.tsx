@@ -24,7 +24,7 @@ export function HistoryScreen() {
       <div><div className="eyebrow">Cronología</div><h1 className="font-display text-2xl font-bold">Historia de tu Chile</h1></div>
       <Panel title="Aprobación presidencial a lo largo de la partida">
         {approval.length < 2 ? <Empty>Aún no hay suficiente historia.</Empty> : (
-          <div className="h-48"><ResponsiveContainer><LineChart data={approval} margin={{ left: -20, right: 8 }}><CartesianGrid stroke="#26324a" strokeDasharray="3 3" /><XAxis dataKey="fecha" tick={{ fill: '#8a94ab', fontSize: 10 }} minTickGap={40} /><YAxis domain={[0, 80]} tick={{ fill: '#8a94ab', fontSize: 10 }} /><Tooltip contentStyle={{ background: '#121a28', border: '1px solid #37445f' }} /><Line dataKey="aprobacion" stroke="#c9a24a" dot={false} strokeWidth={2} /></LineChart></ResponsiveContainer></div>
+          <div className="h-48"><ResponsiveContainer><LineChart data={approval} margin={{ left: -20, right: 8 }}><CartesianGrid stroke="#DDD6CA" strokeDasharray="3 3" /><XAxis dataKey="fecha" tick={{ fill: '#5C6369', fontSize: 10 }} minTickGap={40} /><YAxis domain={[0, 80]} tick={{ fill: '#5C6369', fontSize: 10 }} /><Tooltip contentStyle={{ background: '#FCFAF6', color: '#27313B', border: '1px solid #CEC6B9', borderRadius: 6 }} /><Line dataKey="aprobacion" stroke="#782F3D" dot={false} strokeWidth={2} /></LineChart></ResponsiveContainer></div>
         )}
       </Panel>
       <div className="flex flex-wrap items-center gap-3"><Tabs value={cat} onChange={setCat} options={CATS} />

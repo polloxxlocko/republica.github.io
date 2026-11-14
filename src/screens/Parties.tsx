@@ -56,7 +56,7 @@ function PartyDetail({ p, onBack }: { p: Party; onBack: () => void }) {
           <div className="space-y-4">
             <Panel title="Organización (estimaciones)">
               <div className="grid grid-cols-2 gap-3">
-                <Bar label="Popularidad" value={p.popularity} color="#4fbf8a" /><Bar label="Rechazo" value={p.rejection} color="#e06464" />
+                <Bar label="Popularidad" value={p.popularity} color="#48665B" /><Bar label="Rechazo" value={p.rejection} color="#A44343" />
                 <Bar label="Credibilidad" value={p.credibility} /><Bar label="Disciplina" value={p.discipline} />
                 <Bar label="Cohesión" value={p.cohesion} /><Bar label="Organización" value={p.organization} />
                 <Bar label="Movilización" value={p.mobilization} /><Stat label="Recursos" value={mm(p.funds)} />
@@ -112,7 +112,7 @@ function PartyDetail({ p, onBack }: { p: Party; onBack: () => void }) {
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Promedio de encuestas en la partida">
             {series.length < 2 ? <Empty>Aún no hay suficiente historia.</Empty> : (
-              <div className="h-56"><ResponsiveContainer><LineChart data={series} margin={{ left: -20, right: 8 }}><CartesianGrid stroke="#26324a" strokeDasharray="3 3" /><XAxis dataKey="semana" tick={{ fill: '#8a94ab', fontSize: 10 }} /><YAxis tick={{ fill: '#8a94ab', fontSize: 10 }} /><Tooltip contentStyle={{ background: '#121a28', border: '1px solid #37445f' }} /><Line dataKey="encuestas" stroke={p.color} dot={false} strokeWidth={2} /></LineChart></ResponsiveContainer></div>
+              <div className="h-56"><ResponsiveContainer><LineChart data={series} margin={{ left: -20, right: 8 }}><CartesianGrid stroke="#DDD6CA" strokeDasharray="3 3" /><XAxis dataKey="semana" tick={{ fill: '#5C6369', fontSize: 10 }} /><YAxis tick={{ fill: '#5C6369', fontSize: 10 }} /><Tooltip contentStyle={{ background: '#FCFAF6', color: '#27313B', border: '1px solid #CEC6B9', borderRadius: 6 }} /><Line dataKey="encuestas" stroke={p.color} dot={false} strokeWidth={2} /></LineChart></ResponsiveContainer></div>
             )}
           </Panel>
           <Panel title="Elecciones y coaliciones">

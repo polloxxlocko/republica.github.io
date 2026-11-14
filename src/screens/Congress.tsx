@@ -165,7 +165,7 @@ export function Congress() {
           <div className="mt-2 flex flex-wrap gap-1.5">{ordered.map(([p, n]) => (
             <button key={p} onClick={() => setHl(hl === p ? null : p)} aria-pressed={hl === p} className={`chip ${hl === p ? 'border-gold-400' : ''}`}><span className="h-2.5 w-2.5 rounded-sm" style={{ background: partyColor(g, p) }} />{partyShort(g, p)} {n}</button>
           ))}</div>
-          <div className="mt-3"><Bar label="Peso del oficialismo" value={govSeats} max={total} color="#c9a24a" /></div>
+          <div className="mt-3"><Bar label="Peso del oficialismo" value={govSeats} max={total} color="#782F3D" /></div>
         </Panel>
         <Panel title={sel ? 'Parlamentario/a' : 'Selecciona un escaño'}>
           {sel ? <LegislatorCard id={sel} /> : <Empty>Haz clic en un escaño del hemiciclo para ver su perfil, o en una bancada para resaltarla. {c.offices.some((o) => o.type === 'diputado' || o.type === 'senador') ? 'Tu escaño tiene borde dorado.' : ''}</Empty>}

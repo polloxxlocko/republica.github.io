@@ -53,7 +53,7 @@ export function ComunaMap({ cells, selected, onSelect, region, height = 640 }: {
         const cell = cells[p.cut];
         const sel = p.cut === selected;
         return (
-          <path key={p.cut} d={p.d} fill={cell?.color ?? NO_DATA} stroke={sel ? '#e9d39c' : '#0b0f17'} strokeWidth={sel ? 2 : stroke} vectorEffect="non-scaling-stroke"
+          <path key={p.cut} d={p.d} fill={cell?.color ?? NO_DATA} stroke={sel ? '#782F3D' : '#FCFAF6'} strokeWidth={sel ? 2 : stroke} vectorEffect="non-scaling-stroke"
             className="cursor-pointer outline-none hover:opacity-80 focus:opacity-80" tabIndex={0} role="button" aria-label={`${COMUNA_BY_CUT[p.cut]?.name}: ${cell?.label ?? 'sin datos'}`}
             onClick={() => onSelect(p.cut)} onKeyDown={(e) => { if (e.key === 'Enter') onSelect(p.cut); }}>
             <title>{`${COMUNA_BY_CUT[p.cut]?.name ?? p.cut}: ${cell?.label ?? 'sin datos'}`}</title>

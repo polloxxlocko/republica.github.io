@@ -14,9 +14,11 @@ import { leftRight } from '../game/systems/util';
 import { actionBlocked } from '../game/systems/player';
 import { partyColor, partyShort, pct, num, playerChar } from '../app/selectors';
 import { formatShort } from '../game/engine/dates';
+import { TerritorialDossier } from '../components/TerritorialDossier';
+import { homeCut } from '../game/career/capital';
 
 type Layer = 'ganador' | 'distribucion' | 'participacion' | 'competitividad' | 'evolucion' | 'ideologia' | 'prioridades';
-const BLOC_COLOR: Record<Bloc, string> = { izq: '#e66767', centro: '#c98500', der: '#3987e5', pop: '#d95926', otro: '#8a94ab' };
+const BLOC_COLOR: Record<Bloc, string> = { izq: '#e34948', centro: '#eda100', der: '#2a78d6', pop: '#eb6834', otro: '#5C6369' };
 const BLOC_LABEL: Record<Bloc, string> = { izq: 'Izquierda y centroizquierda', centro: 'Centro', der: 'Derecha', pop: 'Populista / antiestablishment', otro: 'Otros' };
 const PRIORITY_ORDER = ['seguridad', 'salud', 'economia', 'pensiones', 'vivienda', 'medioambiente', 'descentralizacion', 'infraestructura'];
 
@@ -51,7 +53,7 @@ export function MapScreen() {
   const [layer, setLayer] = useState<Layer>('ganador');
   const [focus, setFocus] = useState<string>('bloc:der');
   const [region, setRegion] = useState<RegionId | ''>('');
-  const [sel, setSel] = useState<number | null>(null);
+  const [sel, setSel] = useState<number | null>(() => { const st = useGame.getState().game; return st ? homeCut(st) : null; });
   const [amount, setAmount] = useState(10);
   const [scope, setScope] = useState<'comuna' | 'distrito' | 'region'>('comuna');
   const [stratRegion, setStratRegion] = useState<RegionId | ''>('');
@@ -111,7 +113,7 @@ export function MapScreen() {
         const lr = w ? acc / w : 0; color = diverging(lr / 45); label = `índice izq.-der. estimado ${lr.toFixed(0)}`;
       } else if (layer === 'prioridades') {
         const pr = Object.entries(g.comunas[c.cut]?.priorities ?? {}).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0];
-        if (pr) { const i = PRIORITY_ORDER.indexOf(pr[0]); color = i >= 0 ? CATEGORICAL[i] : '#8a94ab'; label = `prioridad: ${AREA_LABELS[pr[0] as keyof typeof AREA_LABELS]}`; }
+        if (pr) { const i = PRIORITY_ORDER.indexOf(pr[0]); color = i >= 0 ? CATEGORICAL[i] : '#5C6369'; label = `prioridad: ${AREA_LABELS[pr[0] as keyof typeof AREA_LABELS]}`; }
       }
       out[c.cut] = { color, label };
     }
@@ -137,7 +139,7 @@ export function MapScreen() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div><div className="eyebrow">Territorio electoral · 346 comunas</div><h1 className="font-display text-2xl font-bold">Mapa electoral de Chile</h1></div>
+        <div><div className="kicker">Territorio electoral · 346 comunas</div><h1 className="font-display text-3xl font-semibold text-ink-50">Territorio</h1></div>
         <Tabs value={tab} onChange={setTab} options={[{ id: 'mapa', label: 'Mapa y comunas' }, { id: 'estrategia', label: 'Estrategia territorial' }]} />
       </div>
       {tab === 'mapa' && (
@@ -157,18 +159,11 @@ export function MapScreen() {
             {E && <p className="mt-1 text-[11px] text-ink-500">Fuente: {E.source} · {E.status}{E.split === 'validacion' ? ' · en la partida se usa para calibrar; en la prueba de validación se reserva' : ''}</p>}
           </Panel>
           <div className="grid gap-4 xl:grid-cols-[minmax(320px,1fr)_minmax(360px,1.1fr)]">
-            <Panel bodyClass="p-2">{!hist ? <Empty>Cargando resultados oficiales…</Empty> : <ComunaMap cells={cells} selected={sel} onSelect={(c) => { setSel(c); }} region={region || null} height={region ? 560 : 760} />}</Panel>
+            <Panel bodyClass="p-2" className="self-start xl:sticky xl:top-20">{!hist ? <Empty>Cargando resultados oficiales…</Empty> : <ComunaMap cells={cells} selected={sel} onSelect={(c) => { setSel(c); }} region={region || null} height={region ? 560 : 760} />}</Panel>
             <div className="space-y-4">
               {!selC ? <Panel title="Selecciona una comuna"><Empty>Haz clic en una comuna del mapa (o usa el teclado) para ver su perfil, resultados históricos, estimaciones para tu partido y opciones de campaña.</Empty></Panel> : (
                 <>
-                  <Panel title={selC.name} right={<span className="text-xs text-ink-400">{REGION_BY_ID[selC.region].shortName} · Prov. {selC.province} · Distrito {selC.district}</span>}>
-                    <div className="grid grid-cols-3 gap-3">
-                      <Stat label="Electores (2023)" value={num(selC.electors)} /><Stat label="Población (2024)" value={num(selC.pop)} /><Stat label="Densidad" value={selC.density !== null ? `${num(selC.density)}/km²` : '—'} />
-                      <Stat label="Escolaridad 18+" value={`${selC.school} años`} /><Stat label="Educación superior" value={pct(selC.eduSup * 100, 0)} /><Stat label="Inmigrantes" value={pct(selC.imm * 100, 1)} />
-                      <Stat label="Pueblos indígenas" value={pct(selC.indig * 100, 0)} /><Stat label="Evangélicos" value={pct(selC.evang * 100, 0)} /><Stat label="Sin religión" value={pct(selC.norel * 100, 0)} />
-                    </div>
-                    <p className="mt-2 text-[11px] text-ink-500">INE Censo 2024 y SERVEL padrón 2023. Los atributos demográficos se usan con efectos moderados; no determinan el voto.</p>
-                  </Panel>
+                  <TerritorialDossier cut={selC.cut} />
                   {E && (() => { const s = summarize(E, E.c[selC.cut]); return s ? (
                     <Panel title={HIST_LABELS[E.id] ?? sources.find((x) => x.id === E.id)?.label ?? E.id} right={<span className="text-xs text-ink-400">participación {pct(s.turnout * 100)} · nulos/blancos {pct(s.voters ? s.nullBlank / s.voters * 100 : 0)}</span>}>
                       <div className="space-y-1">{E.options.map((o) => ({ o, v: s.shares[o.k] ?? 0 })).sort((a, b) => b.v - a.v).slice(0, 7).map(({ o, v }) => (

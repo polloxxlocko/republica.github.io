@@ -65,7 +65,7 @@ export function ElectionNight() {
           <Stat label="Votos válidos contados" value={num(partial.valid)} />
           <Stat label="Participación final" value={done ? pct(r.turnoutPct) : '—'} />
         </div>
-        <div className="mt-3"><Bar value={partial.mesas} color="#c9a24a" showValue={false} label="Avance del escrutinio" /></div>
+        <div className="mt-3"><Bar value={partial.mesas} color="#782F3D" showValue={false} label="Avance del escrutinio" /></div>
       </Panel>
       {done && out?.ran && (
         <div className={`panel rise p-5 ${out.won ? 'border-emerald-500/60' : 'border-red-500/60'}`}>

@@ -45,7 +45,7 @@ export function Hemicycle({ g, chamber, selected, onSelect, highlightParty }: Pr
           const isSel = selected && s.c?.id === selected;
           return (
             <circle key={s.seat.id} cx={p.x} cy={p.y} r={rDot} fill={partyColor(g, s.party)} opacity={dim ? 0.18 : 1}
-              stroke={isSel ? '#fff' : s.c?.isPlayer ? '#e9d39c' : 'rgba(0,0,0,0.35)'} strokeWidth={isSel || s.c?.isPlayer ? 0.012 : 0.004}
+              stroke={isSel ? '#27313B' : s.c?.isPlayer ? '#782F3D' : 'rgba(252,250,246,0.9)'} strokeWidth={isSel || s.c?.isPlayer ? 0.012 : 0.004}
               className={onSelect && s.c ? 'cursor-pointer' : ''} tabIndex={onSelect && s.c ? 0 : -1}
               onClick={() => s.c && onSelect?.(s.c.id)} onKeyDown={(e) => { if (e.key === 'Enter' && s.c) onSelect?.(s.c.id); }}>
               <title>{s.c ? `${charName(g, s.c.id)} (${partyShort(g, s.party)})` : 'Vacante'}</title>
@@ -53,7 +53,7 @@ export function Hemicycle({ g, chamber, selected, onSelect, highlightParty }: Pr
           );
         })}
       </g>
-      <text x="0" y="1.02" textAnchor="middle" fontSize="0.09" fill="#e8ecf4" fontFamily="JetBrains Mono">{seats.length}</text>
+      <text x="0" y="1.02" textAnchor="middle" fontSize="0.09" fill="#27313B" fontFamily="IBM Plex Mono">{seats.length}</text>
     </svg>
   );
 }

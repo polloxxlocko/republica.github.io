@@ -86,7 +86,7 @@ export function Elections() {
         <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <Panel title="Evolución del promedio de encuestas (partidos)" right={<span className="text-[11px] text-ink-400">encuestadoras ficticias</span>}>
             {partySeries.data.length < 2 ? <Empty>Se requieren más semanas de encuestas.</Empty> : (
-              <div className="h-72"><ResponsiveContainer><LineChart data={partySeries.data} margin={{ left: -20, right: 8 }}><CartesianGrid stroke="#26324a" strokeDasharray="3 3" /><XAxis dataKey="semana" tick={{ fill: '#8a94ab', fontSize: 10 }} /><YAxis tick={{ fill: '#8a94ab', fontSize: 10 }} /><Tooltip contentStyle={{ background: '#121a28', border: '1px solid #37445f', fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} />
+              <div className="h-72"><ResponsiveContainer><LineChart data={partySeries.data} margin={{ left: -20, right: 8 }}><CartesianGrid stroke="#DDD6CA" strokeDasharray="3 3" /><XAxis dataKey="semana" tick={{ fill: '#5C6369', fontSize: 10 }} /><YAxis tick={{ fill: '#5C6369', fontSize: 10 }} /><Tooltip contentStyle={{ background: '#FCFAF6', color: '#27313B', border: '1px solid #CEC6B9', borderRadius: 6, fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} />
                 {partySeries.keys.map((k) => <Line key={k} dataKey={k} name={partyShort(g, k)} stroke={partyColor(g, k)} dot={false} strokeWidth={2} />)}</LineChart></ResponsiveContainer></div>
             )}
             <p className="mt-2 text-xs text-ink-400">Las encuestas incluyen error muestral, indecisos y sesgos de casa. La intención estimada no equivale al resultado electoral.</p>

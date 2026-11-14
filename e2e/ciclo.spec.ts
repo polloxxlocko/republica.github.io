@@ -6,7 +6,7 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto('./');
-    await expect(page.getByRole('heading', { name: /REPÚBLICA/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /REPÚBLICA/i })).toBeVisible();
     await page.getByTestId('nueva-partida').click();
     await page.getByTestId('nombre').fill('Camila');
     await page.getByTestId('apellido').fill('Fuentes Araya');

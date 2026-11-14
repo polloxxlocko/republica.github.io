@@ -101,3 +101,4 @@ Los datos de referencia están en `src/game/data/`. Cada conjunto declara fuente
 - [SIMULATION_RULES.md](SIMULATION_RULES.md): fórmulas, parámetros y simplificaciones institucionales.
 - [DEPLOYMENT.md](DEPLOYMENT.md): despliegue en GitHub Pages.
 - [TESTING.md](TESTING.md): pruebas y balance.
+- [docs/ART_DIRECTION.md](docs/ART_DIRECTION.md), [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md), [docs/UI_SCREEN_SPECIFICATIONS.md](docs/UI_SCREEN_SPECIFICATIONS.md), [docs/PHOTO_SOURCES.md](docs/PHOTO_SOURCES.md), [docs/ASSET_LICENSES.md](docs/ASSET_LICENSES.md), [docs/CHARACTER_ART_STYLE.md](docs/CHARACTER_ART_STYLE.md), [docs/UI_PROGRESS.md](docs/UI_PROGRESS.md): dirección de arte «Archivo de Poder».

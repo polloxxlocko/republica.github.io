@@ -1,0 +1,67 @@
+/*
+ * ARCHIVO DE PODER — tokens de diseño.
+ * Valores en canales RGB para usarlos con opacidad en Tailwind (rgb(var(--x) / <alpha-value>)).
+ * Contraste verificado (WCAG 2.2 AA) contra fondo, superficie y superficie secundaria:
+ *   texto 10.4–12.7 · secundario 4.6–5.6 · burdeos 7.3–8.9 · verde 5.0–6.1 · azul 5.6–6.7 · advertencia (texto) 4.9–6.0 · peligro 4.8–5.8
+ * El latón (#C5A579, 2.0:1) es solo decorativo: nunca se usa para texto.
+ */
+:root {
+  color-scheme: light;
+  /* Superficies */
+  --c-bg: 244 240 232;          /* #F4F0E8 marfil (fondo) */
+  --c-surface: 252 250 246;     /* #FCFAF6 superficie blanca cálida */
+  --c-surface-2: 234 228 217;   /* #EAE4D9 superficie secundaria */
+  --c-surface-3: 221 214 202;   /* #DDD6CA superficie terciaria / separadores */
+  --c-border: 206 198 185;      /* #CEC6B9 bordes */
+  /* Tinta */
+  --c-ink: 39 49 59;            /* #27313B texto principal */
+  --c-ink-strong: 28 36 44;     /* #1C242C titulares */
+  --c-ink-2: 55 65 74;          /* #37414A */
+  --c-ink-3: 74 83 91;          /* #4A535B */
+  --c-muted: 92 99 105;         /* #5C6369 texto secundario (ajustado para AA) */
+  --c-faint: 107 112 118;       /* #6B7076 metadatos sobre superficie */
+  /* Acentos */
+  --c-burgundy: 120 47 61;      /* #782F3D burdeos principal */
+  --c-burgundy-deep: 89 35 47;  /* #59232F burdeos profundo */
+  --c-brass: 197 165 121;       /* #C5A579 latón (solo detalles) */
+  --c-brass-deep: 140 107 63;   /* #8C6B3F latón oscuro */
+  --c-green: 72 102 91;         /* #48665B verde institucional */
+  --c-green-text: 62 90 80;     /* #3E5A50 */
+  --c-green-tint: 227 235 230;  /* #E3EBE6 */
+  --c-blue: 70 91 112;          /* #465B70 azul institucional */
+  --c-blue-text: 61 80 100;     /* #3D5064 */
+  --c-blue-tint: 225 231 237;   /* #E1E7ED */
+  --c-warn: 166 105 56;         /* #A66938 advertencia (rellenos, bordes) */
+  --c-warn-text: 138 84 38;     /* #8A5426 advertencia (texto) */
+  --c-warn-tint: 243 230 216;   /* #F3E6D8 */
+  --c-danger: 164 67 67;        /* #A44343 peligro */
+  --c-danger-text: 154 59 59;   /* #9A3B3B */
+  --c-danger-tint: 244 225 222; /* #F4E1DE */
+
+  /* Tipografía */
+  --font-sans: 'IBM Plex Sans', 'Public Sans', system-ui, sans-serif;
+  --font-serif: 'Newsreader', 'Source Serif 4', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --fs-hero: clamp(2.5rem, 1.6rem + 2.6vw, 4rem);      /* 40–64 px */
+  --fs-page: clamp(1.75rem, 1.4rem + 1vw, 2.5rem);     /* 28–40 px */
+  --fs-section: clamp(1.375rem, 1.2rem + .4vw, 1.75rem); /* 22–28 px */
+  --fs-module: 1.125rem;   /* 18 px */
+  --fs-body: 0.9375rem;    /* 15 px */
+  --fs-small: 0.8125rem;   /* 13 px */
+  --fs-meta: 0.6875rem;    /* 11 px */
+
+  /* Espaciado (múltiplos de 4) */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+  --gutter: clamp(16px, 2.5vw, 40px);
+  --measure: 68ch;          /* ancho máximo de lectura */
+  --max-content: 1440px;
+
+  /* Bordes, radios, sombras, capas */
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-xl: 10px;
+  --shadow-pop: 0 12px 32px rgb(39 49 59 / 0.18), 0 2px 6px rgb(39 49 59 / 0.08); /* solo flotantes */
+  --z-nav: 30; --z-header: 40; --z-overlay: 50; --z-toast: 60;
+
+  /* Movimiento */
+  --dur-micro: 150ms; --dur-panel: 220ms; --dur-screen: 280ms;
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+}

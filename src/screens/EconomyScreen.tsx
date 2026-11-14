@@ -8,8 +8,8 @@ function Chart({ data, lines, domain }: { data: Record<string, number | string>[
   if (data.length < 2) return <Empty>Se requieren algunos meses de historia.</Empty>;
   return (
     <div className="h-56"><ResponsiveContainer><LineChart data={data} margin={{ left: -16, right: 8 }}>
-      <CartesianGrid stroke="#26324a" strokeDasharray="3 3" /><XAxis dataKey="fecha" tick={{ fill: '#8a94ab', fontSize: 10 }} minTickGap={30} /><YAxis domain={domain ?? ['auto', 'auto']} tick={{ fill: '#8a94ab', fontSize: 10 }} />
-      <Tooltip contentStyle={{ background: '#121a28', border: '1px solid #37445f', fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} />
+      <CartesianGrid stroke="#DDD6CA" strokeDasharray="3 3" /><XAxis dataKey="fecha" tick={{ fill: '#5C6369', fontSize: 10 }} minTickGap={30} /><YAxis domain={domain ?? ['auto', 'auto']} tick={{ fill: '#5C6369', fontSize: 10 }} />
+      <Tooltip contentStyle={{ background: '#FCFAF6', color: '#27313B', border: '1px solid #CEC6B9', borderRadius: 6, fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} />
       {lines.map((l) => <Line key={l.key} dataKey={l.key} name={l.name} stroke={l.color} dot={false} strokeWidth={2} />)}
     </LineChart></ResponsiveContainer></div>
   );
@@ -46,7 +46,7 @@ export function EconomyScreen() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Actividad y empleo"><Chart data={data} lines={[{ key: 'crecimiento', name: 'Crecimiento %', color: '#4fbf8a' }, { key: 'desempleo', name: 'Desempleo %', color: '#e06464' }]} /></Panel>
         <Panel title="Precios y Banco Central"><Chart data={data} lines={[{ key: 'inflacion', name: 'Inflación %', color: '#e3b341' }, { key: 'tpm', name: 'TPM %', color: '#5b7bd6' }]} /></Panel>
-        <Panel title="Fisco"><Chart data={data} lines={[{ key: 'deuda', name: 'Deuda % PIB', color: '#c9a24a' }]} /></Panel>
+        <Panel title="Fisco"><Chart data={data} lines={[{ key: 'deuda', name: 'Deuda % PIB', color: '#782F3D' }]} /></Panel>
         <Panel title="Cobre y sociedad"><Chart data={data} lines={[{ key: 'cobre', name: 'Cobre US$/lb', color: '#d97b3f' }, { key: 'pobreza', name: 'Pobreza %', color: '#a78bfa' }]} /></Panel>
       </div>
       <Panel title="Cómo funciona el modelo">

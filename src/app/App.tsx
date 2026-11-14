@@ -3,7 +3,7 @@ import { BarChart3, Building2, CalendarClock, FastForward, Flag, Landmark, Layou
 import { useGame, type Screen } from '../stores/gameStore';
 import { MainMenu } from '../screens/MainMenu';
 import { NewGame } from '../screens/NewGame';
-import { Dashboard } from '../screens/Dashboard';
+import { CareerCenter } from '../screens/CareerCenter';
 import { Actions } from '../screens/Actions';
 import { MapScreen } from '../screens/MapScreen';
 import { Parties } from '../screens/Parties';
@@ -16,15 +16,17 @@ import { NewsScreen } from '../screens/NewsScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { GameMenu } from '../screens/GameMenu';
 import { ElectionNight } from '../screens/ElectionNight';
+import { Credits } from '../screens/Credits';
 import { dateLabel, mainOffice, nextElectionInfo, partyColor, partyShort, playerChar, mm } from './selectors';
 import { officeLabel } from '../game/systems/characters';
 import { Portrait } from '../components/ui';
 import { DecisionModal } from '../components/DecisionModal';
 import { CharacterSheet } from '../components/CharacterSheet';
 import { Tutorial } from '../components/Tutorial';
+import { careerContext } from '../game/career/stage';
 
 const NAV: { id: Screen; label: string; icon: typeof Map }[] = [
-  { id: 'panel', label: 'Panel', icon: LayoutDashboard },
+  { id: 'panel', label: 'Inicio', icon: LayoutDashboard },
   { id: 'carrera', label: 'Carrera', icon: Route },
   { id: 'acciones', label: 'Acciones', icon: Zap },
   { id: 'mapa', label: 'Territorio', icon: Map },
@@ -62,11 +64,11 @@ function TopBar() {
     <header className="sticky top-0 z-30 border-b border-ink-700/80 bg-ink-950">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 lg:px-5 2xl:flex-nowrap">
         <div className="flex items-center gap-2">
-          <span className="font-display text-lg font-bold tracking-wide text-gold-400">REPÚBLICA</span>
-          <span className="hidden font-display text-lg text-ink-200 sm:inline">: CHILE</span>
+          <span className="font-display text-xl font-semibold tracking-tight text-ink-50">República<span className="text-burgundy">:</span></span>
+          <span className="font-display text-xl font-semibold tracking-tight text-ink-50">Chile</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <CalendarClock size={16} className="text-gold-400" aria-hidden />
+          <CalendarClock size={16} className="text-ink-400" aria-hidden />
           <span className="font-medium" data-testid="fecha">{dateLabel(g)}</span>
           <span className="text-ink-400">· semana {g.week}</span>
         </div>
@@ -76,7 +78,7 @@ function TopBar() {
         </button>
         <div className="ml-auto flex flex-wrap items-center gap-3 text-xs">
           <span title="Recursos políticos (millones de pesos)"><span className="text-ink-400">Rec.</span> <b className="font-mono">{mm(g.player.personalFunds)}</b></span>
-          <span title="Puntos de acción de esta semana" data-testid="pa"><span className="text-ink-400">PA</span> <b className="font-mono text-gold-300">{g.player.actionPoints}/{g.player.maxActionPoints}</b></span>
+          <span title="Puntos de acción de esta semana" data-testid="pa"><span className="text-ink-400">PA</span> <b className="font-mono text-ink-50">{g.player.actionPoints}/{g.player.maxActionPoints}</b></span>
           {ne && <span className="hidden xl:inline" title="Próxima elección"><span className="text-ink-400">{ne.label}:</span> <b className="font-mono">{ne.weeks} sem.</b></span>}
           {g.career.opportunities.length > 0 && <button className="chip border-gold-500/60 text-gold-300" onClick={() => setScreen('carrera')} data-testid="chip-oportunidades">{g.career.opportunities.length} oportunidad{g.career.opportunities.length > 1 ? 'es' : ''}</button>}
           {pending > 0 && <button className="chip border-amber-500/60 text-amber-300" onClick={() => setScreen('panel')}>{pending} decisión{pending > 1 ? 'es' : ''}</button>}
@@ -93,24 +95,40 @@ function TopBar() {
 }
 
 function Nav() {
-  const { screen, setScreen } = useGame();
+  const { game, screen, setScreen } = useGame();
+  // Agrupación por prioridad de la etapa de carrera: lo personal primero; lo nacional crece con el alcance.
+  const ctx = game ? careerContext(game) : null;
+  const byId = Object.fromEntries(NAV.map((n) => [n.id, n]));
+  const own: Screen[] = ['panel', 'carrera', 'acciones', 'mapa'];
+  const national: Screen[] = ctx?.shows.government ? ['gobierno', 'congreso', 'economia', 'partidos', 'elecciones', 'noticias']
+    : ctx?.shows.institutional ? ['congreso', 'partidos', 'elecciones', 'noticias', 'gobierno', 'economia']
+    : ['partidos', 'elecciones', 'noticias', 'congreso', 'gobierno', 'economia'];
+  const groups: { label: string; ids: Screen[] }[] = [
+    { label: 'Tu carrera', ids: own },
+    { label: 'Política nacional', ids: national },
+    { label: 'Archivo', ids: ['historial', 'partida'] },
+  ];
   return (
-    <nav aria-label="Navegación principal" className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto border-t border-ink-700 bg-ink-950/95 px-2 py-1.5 scroll-thin lg:sticky lg:top-[57px] lg:inset-auto lg:h-[calc(100vh-57px)] lg:w-52 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-t-0 lg:bg-transparent lg:px-3 lg:py-4">
-      {NAV.map((n) => {
-        const Icon = n.icon;
-        const on = screen === n.id;
-        return (
-          <button key={n.id} onClick={() => setScreen(n.id)} aria-current={on ? 'page' : undefined}
-            className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-[11px] lg:flex-row lg:gap-2.5 lg:px-3 lg:py-2 lg:text-sm ${on ? 'bg-ink-800 text-gold-300' : 'text-ink-300 hover:bg-ink-850 hover:text-ink-100'}`}>
-            <Icon size={17} aria-hidden /> {n.label}
-          </button>
-        );
-      })}
+    <nav aria-label="Navegación principal" className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto border-t border-ink-600 bg-ink-950 px-2 py-1.5 scroll-thin lg:sticky lg:top-[57px] lg:inset-auto lg:h-[calc(100vh-57px)] lg:w-52 lg:shrink-0 lg:flex-col lg:gap-0 lg:overflow-y-auto lg:border-r lg:border-t-0 lg:px-3 lg:py-5">
+      {groups.map((gr) => (
+        <div key={gr.label} className="flex shrink-0 gap-1 lg:mb-5 lg:flex-col lg:gap-0.5">
+          <div className="eyebrow hidden px-3 pb-1 lg:block">{gr.label}</div>
+          {gr.ids.map((id) => {
+            const n = byId[id]; const Icon = n.icon; const on = screen === n.id;
+            return (
+              <button key={n.id} onClick={() => setScreen(n.id)} aria-current={on ? 'page' : undefined}
+                className={`relative flex shrink-0 flex-col items-center gap-0.5 rounded px-2.5 py-1.5 text-[11px] lg:flex-row lg:gap-2.5 lg:px-3 lg:py-1.5 lg:text-sm ${on ? 'bg-ink-800 font-semibold text-burgundy before:absolute before:inset-y-1 before:left-0 before:hidden before:w-[3px] before:rounded-full before:bg-burgundy lg:before:block' : 'text-ink-300 hover:bg-ink-800 hover:text-ink-50'}`}>
+                <Icon size={16} aria-hidden /> {n.label}
+              </button>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }
 
-const VALID: Screen[] = ['panel', 'carrera', 'acciones', 'mapa', 'partidos', 'congreso', 'elecciones', 'gobierno', 'economia', 'noticias', 'historial', 'partida', 'noche'];
+const VALID: Screen[] = ['panel', 'carrera', 'acciones', 'mapa', 'partidos', 'congreso', 'elecciones', 'gobierno', 'economia', 'noticias', 'historial', 'partida', 'noche', 'creditos'];
 
 export default function App() {
   const { game, screen, setScreen, refreshSaves } = useGame();
@@ -122,18 +140,18 @@ export default function App() {
       const h = window.location.hash.replace(/^#\/?/, '') as Screen;
       const st = useGame.getState();
       if (st.game && VALID.includes(h) && h !== st.screen) useGame.setState({ screen: h });
-      if (!st.game && (h === 'menu' || h === 'nuevo') && h !== st.screen) useGame.setState({ screen: h });
+      if (!st.game && (h === 'menu' || h === 'nuevo' || h === 'creditos') && h !== st.screen) useGame.setState({ screen: h });
       force((x) => x + 1);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
-  useEffect(() => { if (!game && screen !== 'menu' && screen !== 'nuevo') setScreen('menu'); }, [game, screen, setScreen]);
+  useEffect(() => { if (!game && screen !== 'menu' && screen !== 'nuevo' && screen !== 'creditos') setScreen('menu'); }, [game, screen, setScreen]);
 
   if (!game) {
     return (
       <div className="min-h-full">
-        {screen === 'nuevo' ? <NewGame /> : <MainMenu />}
+        {screen === 'nuevo' ? <NewGame /> : screen === 'creditos' ? <Credits /> : <MainMenu />}
         <Toasts />
       </div>
     );
@@ -152,7 +170,8 @@ export default function App() {
     case 'historial': body = <HistoryScreen />; break;
     case 'partida': body = <GameMenu />; break;
     case 'noche': body = <ElectionNight />; break;
-    default: body = <Dashboard />;
+    case 'creditos': body = <Credits />; break;
+    default: body = <CareerCenter />;
   }
   return (
     <div className="flex min-h-full flex-col">

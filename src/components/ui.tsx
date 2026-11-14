@@ -26,7 +26,7 @@ export function Stat({ label, value, sub, tone }: { label: string; value: ReactN
   );
 }
 
-export function Bar({ value, max = 100, color = '#c9a24a', label, showValue = true, height = 'h-2' }: { value: number; max?: number; color?: string; label?: string; showValue?: boolean; height?: string }) {
+export function Bar({ value, max = 100, color = '#782F3D', label, showValue = true, height = 'h-2' }: { value: number; max?: number; color?: string; label?: string; showValue?: boolean; height?: string }) {
   const w = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className="w-full" role="meter" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={max} aria-label={label}>
@@ -95,51 +95,40 @@ export function Tabs<T extends string>({ value, onChange, options }: { value: T;
 }
 
 /**
- * Retrato ilustrado «Archivo de Poder»: grabado editorial a dos tintas (tinta y papel de archivo),
- * con trama de líneas y una franja del color del partido. El mismo lenguaje para personas reales y
- * ficticias: el juego no intenta reproducir rasgos de personas reales ni usa fotografías.
- * Los rasgos se derivan de forma determinista del identificador (consistentes entre sesiones).
+ * Retrato «Archivo de Poder» — SISTEMA TEMPORAL DE SILUETAS EDITORIALES.
+ * Mientras no exista la biblioteca de retratos ilustrados (docs/CHARACTER_ART_STYLE.md), todos los
+ * personajes —reales y ficticios— usan la misma silueta de busto con sus iniciales y una franja del
+ * color de su partido. No se dibujan rostros improvisados. La variación (hombros, cuello, peinado
+ * en silueta) es determinista según el identificador, de modo que cada personaje es reconocible
+ * y consistente entre sesiones.
  */
-export function Portrait({ name, color, size = 44, seed }: { name: string; color: string; size?: number; seed?: string }) {
+export function Portrait({ name, color, size = 44, seed, shape = 'square' }: { name: string; color: string; size?: number; seed?: string; shape?: 'square' | 'round' }) {
   let h = 2166136261;
   for (const ch of seed ?? name) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
   const r = (n: number) => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1000) / 1000 * n; };
-  const uid = `pt${(h >>> 0).toString(36)}${size}`;
-  const face = 13 + r(3); const jaw = 15 + r(4);
-  const hair = Math.floor(r(6)); const glasses = r(1) < 0.3; const collar = Math.floor(r(3));
-  const ink = '#1d2433'; const paper = '#e9dfc8';
-  const hairPath = [
-    `M${32 - face} 26 Q32 ${8 + r(3)} ${32 + face} 26 Q${32 + face - 2} 15 32 14 Q${32 - face + 2} 15 ${32 - face} 26Z`,
-    `M${32 - face - 1} 30 Q${30 - face} 12 32 11 Q${34 + face} 12 ${33 + face} 30 L${31 + face} 22 Q32 17 ${33 - face} 22Z`,
-    `M${32 - face} 24 Q32 ${12 + r(2)} ${32 + face} 24 L${32 + face} 21 Q32 11 ${32 - face} 21Z`,
-    `M${31 - face} 38 Q${28 - face} 12 32 10 Q${36 + face} 12 ${33 + face} 38 L${30 + face} 24 Q32 18 ${34 - face} 24Z`,
-    `M${32 - face + 1} 22 Q32 ${15 + r(2)} ${32 + face - 1} 22 L${32 + face - 1} 20 Q32 14 ${32 - face + 1} 20Z`,
-    `M${32 - face - 2} 34 Q${29 - face} 9 32 9 Q${35 + face} 9 ${32 + face + 2} 34 Q${32 + face} 20 32 18 Q${32 - face} 20 ${32 - face - 2} 34Z`,
+  const initials = name.split(/\s+/).filter((w) => /^[A-ZÁÉÍÓÚÑ]/.test(w)).map((w) => w[0]).slice(0, 2).join('');
+  const head = 10.5 + r(1.5); const shoulder = 21 + r(4); const neck = 4 + r(1.2);
+  const hair = Math.floor(r(4));
+  const hairD = [
+    `M${32 - head} ${25} Q32 ${10 - r(2)} ${32 + head} 25 Q${32 + head} 17 32 15.5 Q${32 - head} 17 ${32 - head} 25Z`,
+    `M${32 - head - 1.5} 31 Q${31 - head} 11 32 11 Q${33 + head} 11 ${32 + head + 1.5} 31 Q${32 + head} 19 32 17 Q${32 - head} 19 ${32 - head - 1.5} 31Z`,
+    '',
+    `M${32 - head} 23 Q32 ${12 + r(2)} ${32 + head} 23 L${32 + head} 21 Q32 13 ${32 - head} 21Z`,
   ][hair];
+  const uid = `ps${(h >>> 0).toString(36)}`;
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" className="shrink-0 rounded-full" role="img" aria-label={`Retrato ilustrado: ${name}`}>
-      <defs>
-        <pattern id={`${uid}h`} width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line x1="0" y1="0" x2="0" y2="3" stroke={ink} strokeWidth="0.9" opacity="0.55" /></pattern>
-        <clipPath id={`${uid}c`}><circle cx="32" cy="32" r="32" /></clipPath>
-      </defs>
-      <g clipPath={`url(#${uid}c)`}>
-        <rect width="64" height="64" fill={paper} />
-        <rect width="64" height="64" fill={`url(#${uid}h)`} opacity="0.35" />
-        <rect y="56" width="64" height="8" fill={color} opacity="0.9" />
-        <path d={`M8 64 Q10 ${46 + r(3)} 32 ${45 + r(2)} Q54 ${46 + r(3)} 56 64Z`} fill={ink} />
-        {collar === 0 && <path d="M27 46 L32 56 L37 46Z" fill={paper} />}
-        {collar === 1 && <path d="M26 46 L32 52 L38 46 L36 46 L32 50 L28 46Z" fill={paper} />}
-        {collar === 2 && <path d="M29 46 L32 58 L35 46Z" fill={color} opacity="0.85" />}
-        <rect x="28" y="38" width="8" height="9" fill={paper} stroke={ink} strokeWidth="0.8" />
-        <ellipse cx="32" cy="29" rx={face} ry={jaw} fill={paper} stroke={ink} strokeWidth="1.1" />
-        <ellipse cx={32 + face * 0.25} cy="31" rx={face * 0.75} ry={jaw * 0.85} fill={`url(#${uid}h)`} opacity="0.5" />
-        <path d={hairPath} fill={ink} />
-        <circle cx={32 - face * 0.38} cy="29" r="1" fill={ink} /><circle cx={32 + face * 0.38} cy="29" r="1" fill={ink} />
-        <path d={`M${30.5} ${31} Q32 ${34 + r(1)} 33 ${33}`} stroke={ink} strokeWidth="0.7" fill="none" />
-        <path d={`M${29} ${37 + r(1)} Q32 ${38.5 + r(1)} 35 ${37 + r(1)}`} stroke={ink} strokeWidth="0.8" fill="none" />
-        {glasses && <g stroke={ink} strokeWidth="0.9" fill="none"><circle cx={32 - face * 0.38} cy="29" r="2.8" /><circle cx={32 + face * 0.38} cy="29" r="2.8" /><line x1={32 - face * 0.38 + 2.8} y1="29" x2={32 + face * 0.38 - 2.8} y2="29" /></g>}
+    <svg width={size} height={size} viewBox="0 0 64 64" className={`shrink-0 ${shape === 'round' ? 'rounded-full' : 'rounded-[4px]'}`} role="img" aria-label={`Retrato (silueta editorial): ${name}`}>
+      <defs><clipPath id={uid}><rect width="64" height="64" rx={shape === 'round' ? 32 : 5} /></clipPath></defs>
+      <g clipPath={`url(#${uid})`}>
+        <rect width="64" height="64" fill="rgb(var(--c-surface-2))" />
+        <path d={`M${32 - shoulder} 66 Q${32 - shoulder} ${46 + r(2)} 32 ${45 + r(1)} Q${32 + shoulder} ${46 + r(2)} ${32 + shoulder} 66Z`} fill="rgb(var(--c-ink-3))" />
+        <rect x={32 - neck} y="34" width={neck * 2} height="12" fill="rgb(var(--c-ink-3))" />
+        <ellipse cx="32" cy="28" rx={head} ry={head + 2.5} fill="rgb(var(--c-ink-3))" />
+        {hairD && <path d={hairD} fill="rgb(var(--c-ink-2))" />}
+        <rect y="61" width="64" height="3" fill={color} />
+        {size >= 40 && <text x="5" y="11" fontSize="8" fontFamily="IBM Plex Mono, monospace" fill="rgb(var(--c-muted))">{initials}</text>}
       </g>
-      <circle cx="32" cy="32" r="31.4" fill="none" stroke={ink} strokeWidth="1.2" opacity="0.7" />
+      <rect x="0.5" y="0.5" width="63" height="63" rx={shape === 'round' ? 31.5 : 4.5} fill="none" stroke="rgb(var(--c-border))" />
     </svg>
   );
 }

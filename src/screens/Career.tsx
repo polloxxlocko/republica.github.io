@@ -392,13 +392,13 @@ export function Career() {
           <Panel title="Evolución de tu reputación (tendencias)">
             {series.length < 2 ? <Empty>Se registra cada trimestre.</Empty> : (
               <div className="h-72"><ResponsiveContainer><LineChart data={series} margin={{ left: -20, right: 8 }}>
-                <CartesianGrid stroke="#26324a" strokeDasharray="3 3" /><XAxis dataKey="fecha" tick={{ fill: '#8a94ab', fontSize: 10 }} /><YAxis domain={[0, 100]} tick={false} width={8} />
-                <Tooltip contentStyle={{ background: '#121a28', border: '1px solid #37445f', fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line dataKey="terr" name="Arraigo" stroke="#4e8fd6" dot={false} strokeWidth={2} />
-                {pl.partyId && <Line dataKey="party" name="Confianza partidaria" stroke="#c9a24a" dot={false} strokeWidth={2} />}
-                <Line dataKey="rec" name="Reconocimiento" stroke="#8fb8e8" dot={false} strokeWidth={2} />
-                <Line dataKey="pop" name="Popularidad" stroke="#5fb38a" dot={false} strokeWidth={2} />
-                <Line dataKey="cred" name="Credibilidad" stroke="#b088d0" dot={false} strokeWidth={2} />
+                <CartesianGrid stroke="#DDD6CA" strokeDasharray="3 3" /><XAxis dataKey="fecha" tick={{ fill: '#5C6369', fontSize: 10 }} /><YAxis domain={[0, 100]} tick={false} width={8} />
+                <Tooltip contentStyle={{ background: '#FCFAF6', color: '#27313B', border: '1px solid #CEC6B9', borderRadius: 6, fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line dataKey="terr" name="Arraigo" stroke="#2a78d6" dot={false} strokeWidth={2} />
+                {pl.partyId && <Line dataKey="party" name="Confianza partidaria" stroke="#782F3D" dot={false} strokeWidth={2} />}
+                <Line dataKey="rec" name="Reconocimiento" stroke="#1baf7a" dot={false} strokeWidth={2} />
+                <Line dataKey="pop" name="Popularidad" stroke="#eda100" dot={false} strokeWidth={2} />
+                <Line dataKey="cred" name="Credibilidad" stroke="#e87ba4" dot={false} strokeWidth={2} />
               </LineChart></ResponsiveContainer></div>
             )}
           </Panel>
