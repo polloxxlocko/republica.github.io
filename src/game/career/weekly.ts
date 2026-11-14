@@ -5,7 +5,7 @@ import { clamp } from '../rules/params';
 import { officeLabel, removeOffice } from '../systems/characters';
 import { ELECTION_LABELS } from '../systems/elections';
 import { fillVacancies, setPlayerVoteHook, setVacancyHook } from '../systems/parliament';
-import { bio, capitalOf, homeCut, me, officeRank, progress } from './capital';
+import { MINOR_ROLES, PUBLIC_OFFICES, bio, capitalOf, homeCut, me, minorRoleBlocked, officeRank, progress } from './capital';
 import { weeklyNominations } from './nominations';
 import { processOpportunities } from './opportunities';
 import { playerVoteConsequence } from './offices';
@@ -14,6 +14,7 @@ import { designateReplacement, weeklyLatent } from './latent';
 import { trackContacts, verifyIntel, weeklyIntel } from './knowledge';
 import { reviewElection } from './review';
 import { generateAgenda, weeklyTeamAndDigital } from './agendaWeek';
+import { weeklyLeg } from './legislature';
 import { first } from './capital';
 import { newId } from '../systems/util';
 
@@ -48,6 +49,7 @@ export function weeklyCareer(s: GameState, rng: Rng): void {
   if (s.week % 4 === 0) trackContacts(s);
   processOpportunities(s, rng, EXTRA_DEFS);
   weeklyTeamAndDigital(s);
+  weeklyLeg(s, rng);
   generateAgenda(s, rng);
   // Cargos: detectar inicios y términos
   const now = c.offices.map((o) => o.type);
@@ -72,6 +74,14 @@ export function weeklyCareer(s: GameState, rng: Rng): void {
       bio(s, 'fin_cargo', `Cesas como ${officeLabel(o.type, c.gender)} por incompatibilidad`, `Asumes como ${officeLabel(fresh[0] as never, c.gender)}.`, 0);
     }
     fillVacancies(s, rng);
+  }
+  for (const o of [...c.offices]) {
+    if (!MINOR_ROLES.includes(o.type)) continue;
+    const why = minorRoleBlocked(c, o.type);
+    if (!why) continue;
+    const top = c.offices.find((x) => PUBLIC_OFFICES.includes(x.type))!;
+    removeOffice(s, c, o.type, `deja el rol al asumir como ${officeLabel(top.type, c.gender)}`);
+    bio(s, 'fin_cargo', `Dejas tu rol de ${officeLabel(o.type, c.gender)}`, `${o.label ? `${o.label}. ` : ''}Incompatible con tu cargo de ${officeLabel(top.type, c.gender)}.`, 0);
   }
   const nowAfter = c.offices.map((o) => o.type);
   for (const t of before) if (!nowAfter.includes(t as never) && !s.career.bio.some((b) => b.week === s.week && b.kind === 'fin_cargo' && b.title.includes(officeLabel(t as never, c.gender)))) bio(s, 'fin_cargo', `Dejas el cargo de ${officeLabel(t as never, c.gender)}`, '', 0);

@@ -37,6 +37,19 @@ Reglas del sorteo: solo entran las actividades cuyas condiciones se cumplen (car
 
 **Acciones permanentes que dependen de la semana**: las entrevistas exigen que un medio te invite (más probable con reconocimiento o jefe/a de prensa). Los debates requieren una invitación, la mediación requiere un conflicto local, y un acto exige lugar y permisos. La disponibilidad es determinista dentro de la semana y cambia a la siguiente.
 
+## Labor parlamentaria
+
+Al asumir como diputado/a o senador/a (`src/game/career/legislature.ts`):
+
+- **Comisiones**: integras dos comisiones permanentes según tus intereses (Hacienda, Educación, Salud, Trabajo, Seguridad Ciudadana, Vivienda, Obras Públicas, Medio Ambiente, Minería y Energía, Gobierno Interior, Relaciones Exteriores, Constitución o Ciencias). Cada marzo puedes postular a **presidir una comisión**, lo que te permite **poner proyectos en tabla** y acelerarlos, y a la **jefatura de bancada**, que da influencia en el partido y permite ordenar las votaciones.
+- **Semanas legislativas y distritales**: la última semana de cada mes es distrital. En ella no hay sesiones y puedes hacer la semana distrital. En las demás hay sesiones, y hacer terreno sin **pareo** cuenta como **inasistencia**.
+- **Acciones**: intervenir en sala, presentar mociones, presentar **indicaciones** (moderan un proyecto en comisión, con más peso en tu comisión), pedir una **sesión especial** (con un tercio de la cámara), **interpelar** a un ministro (Cámara, desde la oposición y con 52 firmas; solo titulares ficticios), **citar** a ministros a tu comisión, enviar oficios de fiscalización, formar una **bancada transversal** con parlamentarios de otros partidos, recibir **audiencias de la Ley del Lobby**, abrir una **oficina distrital** (da arraigo semanal y permite atender vecinos) y presentar la **declaración de intereses y patrimonio** (marzo-abril; no presentarla tiene costo público).
+- **Registro público**: asistencia, intervenciones, indicaciones, mociones, oficios, sesiones especiales, interpelaciones y audiencias. Una asistencia baja genera críticas en la prensa. El registro (asistencia, leyes y labor) suma o resta en tu reelección, entre −8 y +12 puntos de calidad de candidatura.
+
+## Compatibilidad de cargos
+
+Un cargo público (Presidente/a, ministro/a, subsecretario/a, seremi, senador/a, diputado/a, gobernador/a, alcalde/sa o concejal/a) es incompatible con ser asesor/a de otra persona o dirigente de una organización social. La directiva regional del partido solo es compatible con un cargo de concejal/a. Mientras ejerces un cargo público no recibes ofertas de roles menores, no puedes postular al concejo si ejerces un cargo superior, y al asumir dejas automáticamente los roles incompatibles (queda registrado en la biografía). Entre cargos públicos rige la incompatibilidad general: al asumir uno nuevo se cesa en el anterior.
+
 ## Equipo propio
 
 Desde la agenda puedes sumar hasta 5 personas: jefe/a de prensa, coordinador/a territorial, asesor/a técnico/a, encargado/a de redes y encargado/a de finanzas. Cada una cobra honorarios semanales (0,8 a 1,3 MM$), aporta un efecto semanal (organización y arraigo, prestigio, presencia digital, reconocimiento o recursos) y mejora las actividades de su área. Si no puedes pagar, la persona se va. También puedes prescindir de alguien.

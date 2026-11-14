@@ -18,6 +18,7 @@ import { VOTE, PARTY, clamp } from '../rules/params';
 import { allocateWithPacts } from './dhondt';
 import { buildUtilityContext, comunaElectors, computeShares, partyOptions, type ShareResult, type VoteOption } from './electorate';
 import { COMUNAS, comunasOfDistrict, comunasOfRegion, councilSeats } from '../territory/data';
+import { legislativeRecordBonus } from '../career/legislature';
 import { nomineesFor } from '../career/nominations';
 import { ageOf, candidateQuality, createCharacter, fullName, removeOffice, remember } from './characters';
 import { addHistory, currentISO, ideoDistance, newId, log, strongholdFactor } from './util';
@@ -247,7 +248,7 @@ function runProportional(s: GameState, rng: Rng, election: ScheduledElection, ch
           if (nc && nc.status === 'activo' && !cands.some((x) => x.id === nid)) cands.unshift({ id: nid, partyId: p, listId, quality: candidateQuality(nc, u.regionId) + 4 });
         }
         if (pc && playerChar && (pc.partyId === p) && String(u.unitId) === pc.unitId) {
-          const q = candidateQuality(playerChar, u.regionId) + campaignBoostForPlayer(s) * 25 + (playerChar.offices.some((o) => o.type === type) ? 8 : 0);
+          const q = candidateQuality(playerChar, u.regionId) + campaignBoostForPlayer(s) * 25 + (playerChar.offices.some((o) => o.type === type) ? 8 + legislativeRecordBonus(s) : 0);
           cands.push({ id: playerChar.id, partyId: p, listId, quality: clamp(q, 0, 100) });
         }
         while (cands.length < k) {

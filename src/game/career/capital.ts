@@ -70,7 +70,7 @@ export function partyInfluenceOf(s: GameState, c: Character): number {
   const offices = c.offices.reduce((a, o) => a + (W[o.type] ?? 0), 0);
   const fac = p.factions.find((f) => f.id === c.factionId);
   const facLeader = fac?.leaderId === c.id ? fac.influence * 0.3 : 0;
-  return clamp(c.rep.confianzaPartido * 0.45 + leaderRel * 0.2 + offices + facLeader + c.attrs.redes * 0.1, 0, 100);
+  return clamp(c.rep.confianzaPartido * 0.45 + leaderRel * 0.2 + offices + facLeader + c.attrs.redes * 0.1 + caucusBonus(s, c), 0, 100);
 }
 
 export function factionSupportOf(s: GameState, c: Character): number {
@@ -106,6 +106,29 @@ export function capitalOf(s: GameState): PoliticalCapital {
     rejection: Math.round(s.career.capital.rejection),
   };
 }
+
+/** Cargos públicos (de elección o designación). */
+export const PUBLIC_OFFICES: OfficeType[] = ['presidente', 'ministro', 'subsecretario', 'seremi', 'senador', 'diputado', 'gobernador', 'alcalde', 'concejal'];
+/** Roles menores que no pueden ejercerse junto a un cargo público. */
+export const MINOR_ROLES: OfficeType[] = ['asesor', 'dirigente_social', 'dirigente_territorial'];
+
+/**
+ * ¿Puede el personaje asumir un rol menor? Un/a parlamentario/a, autoridad o funcionario/a de
+ * gobierno no puede ser a la vez asesor/a de otra persona ni dirigente de una organización social.
+ * La directiva regional del partido solo es compatible con un cargo de concejal/a.
+ */
+export function minorRoleBlocked(c: Character, role: OfficeType): string | null {
+  const pub = c.offices.filter((o) => PUBLIC_OFFICES.includes(o.type));
+  if (!pub.length) return null;
+  if (role === 'dirigente_territorial' && pub.every((o) => o.type === 'concejal')) return null;
+  return `Incompatible con tu cargo de ${pub.map((o) => o.type).join(', ')}`;
+}
+
+/** Comunas del distrito de una comuna (para efectos distritales). */
+export function comunasOfDistrictSafe(cut: number): number[] { const d = COMUNA_BY_CUT[cut]?.district; return d ? comunasOfDistrict(d).map((c) => c.cut) : [cut]; }
+
+/** Influencia extra del jugador por ser jefe/a de bancada. */
+export function caucusBonus(s: GameState, c: Character): number { return c.isPlayer && (s.career as unknown as { leg?: { caucusLead?: boolean } }).leg?.caucusLead ? 12 : 0; }
 
 export function addTerritory(s: GameState, cuts: number[], amount: number): void {
   for (const cut of cuts) {

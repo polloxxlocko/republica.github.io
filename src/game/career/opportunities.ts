@@ -20,7 +20,7 @@ import { addNews } from '../systems/news';
 import { appointMinister, coalitionMembers } from '../systems/government';
 import { leaveParty } from '../systems/parties';
 import { listIdOf } from '../systems/elections';
-import { addTerritory, bio, capitalOf, first, homeCut, me, officeRank, partyInfluenceOf, progress, stagnationWeeks } from './capital';
+import { PUBLIC_OFFICES, addTerritory, bio, capitalOf, first, homeCut, me, minorRoleBlocked, officeRank, partyInfluenceOf, progress, stagnationWeeks } from './capital';
 import { aspire, aspireBlocked, electionWindow, grantNomination, NOMINATED, unitLabel } from './nominations';
 import { unitComunas } from './capital';
 import { LATENT_OFFER_KINDS, resolveLatentOffer } from './latent';
@@ -101,7 +101,7 @@ export const OPPORTUNITIES: OpportunityDef[] = [
     kind: 'mentor', cooldown: 60,
     generate: (s, rng) => {
       const c = P(s);
-      if (!c.partyId || hasOffice(c, 'asesor') || c.offices.some((o) => ['diputado', 'senador', 'ministro', 'presidente', 'alcalde', 'gobernador'].includes(o.type))) return null;
+      if (!c.partyId || hasOffice(c, 'asesor') || minorRoleBlocked(c, 'asesor')) return null;
       const cap = capitalOf(s);
       const p = 0.01 + cap.prestige / 4000 + cap.relations / 5000 + (stagnationWeeks(s) > 52 ? 0.01 : 0);
       return { p, build: () => {
@@ -132,7 +132,7 @@ export const OPPORTUNITIES: OpportunityDef[] = [
     kind: 'organizacion_social', cooldown: 80,
     generate: (s) => {
       const c = P(s);
-      if (hasOffice(c, 'dirigente_social') || c.offices.length > 1) return null;
+      if (hasOffice(c, 'dirigente_social') || minorRoleBlocked(c, 'dirigente_social') || c.offices.length > 1) return null;
       return { p: 0.015 + capitalOf(s).territorial / 4000, build: () => ({
         title: 'Te ofrecen encabezar una organización local', description: `Vecinos y vecinas de ${COMUNA_BY_CUT[homeCut(s)].name} te proponen presidir su organización (${s.career.origin.organization ?? 'junta de vecinos'}).`, actors: [],
         requirements: ['Tiempo y presencia territorial'], benefits: ['Cargo de dirigente social', 'Capital territorial sostenido', 'Credibilidad lejos de la política partidaria'], risks: ['Conflictos locales difíciles', 'Si te ven usar la organización para tu carrera, pierdes credibilidad'],
@@ -179,7 +179,7 @@ export const OPPORTUNITIES: OpportunityDef[] = [
   {
     kind: 'directiva_local', cooldown: 104,
     generate: (s) => {
-      const c = P(s); if (!c.partyId || hasOffice(c, 'dirigente_territorial') || hasOffice(c, 'presidente_partido')) return null;
+      const c = P(s); if (!c.partyId || hasOffice(c, 'dirigente_territorial') || hasOffice(c, 'presidente_partido') || minorRoleBlocked(c, 'dirigente_territorial')) return null;
       return { p: 0.012 + c.rep.confianzaPartido / 8000, build: () => ({
         title: `Elección de la directiva de ${s.parties[c.partyId!].short} en ${COMUNA_BY_CUT[homeCut(s)].name}`, description: 'Se renueva la directiva local del partido. Puedes competir por la presidencia comunal.', actors: [],
         requirements: ['Militancia activa'], benefits: ['Cargo interno: influencia partidaria y organización'], risks: ['Una derrota interna te debilita frente a la militancia'],
@@ -409,7 +409,7 @@ export const OPPORTUNITIES: OpportunityDef[] = [
   {
     kind: 'cupo_concejal', cooldown: 80,
     generate: (s) => {
-      const c = P(s); if (c.partyId || c.offices.some((o) => o.type === 'concejal')) return null;
+      const c = P(s); if (c.partyId || c.offices.some((o) => PUBLIC_OFFICES.includes(o.type))) return null;
       const e = s.calendar.find((x) => !x.done && x.type === 'concejales' && x.week - s.week > 16 && x.week - s.week < 45);
       const cap = capitalOf(s); if (!e || cap.territorial < 15) return null;
       if (s.player.candidacies.some((k) => s.calendar.find((x) => x.id === k.electionId)?.week === e.week)) return null;

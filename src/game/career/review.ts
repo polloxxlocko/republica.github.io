@@ -14,7 +14,7 @@ import { COMUNA_BY_CUT } from '../territory/data';
 import { ELECTION_LABELS } from '../systems/elections';
 import { fullName, remember } from '../systems/characters';
 import { newId } from '../systems/util';
-import { addTerritory, bio, first, me, officeRank, progress, unitComunas } from './capital';
+import { addTerritory, bio, first, me, minorRoleBlocked, officeRank, progress, unitComunas } from './capital';
 import { qualitative } from './knowledge';
 import type { OpportunityDef } from './opportunities';
 
@@ -101,7 +101,7 @@ export const REVIEW_DEFS: OpportunityDef[] = [
     kind: 'tras_derrota', cooldown: 0, generate: () => null,
     resolve: (s, _rng, _o, ch) => {
       const c = me(s);
-      if (ch === 'partido' && c.partyId) { if (!c.offices.some((x) => x.type === 'dirigente_territorial')) c.offices.push({ type: 'dirigente_territorial', regionId: c.regionId, since: s.week, label: 'Directiva regional' }); c.rep.confianzaPartido = clamp(c.rep.confianzaPartido + 4, 0, 100); progress(s); return 'Asumes un rol en la directiva regional.'; }
+      if (ch === 'partido' && c.partyId && !minorRoleBlocked(c, 'dirigente_territorial')) { if (!c.offices.some((x) => x.type === 'dirigente_territorial')) c.offices.push({ type: 'dirigente_territorial', regionId: c.regionId, since: s.week, label: 'Directiva regional' }); c.rep.confianzaPartido = clamp(c.rep.confianzaPartido + 4, 0, 100); progress(s); return 'Asumes un rol en la directiva regional.'; }
       if (ch === 'territorio') { addTerritory(s, Object.keys(s.career.capital.territory).map(Number).slice(0, 1), 5); s.career.capital.organization = clamp(s.career.capital.organization + 5, 0, 100); return 'Sigues trabajando el territorio con el equipo de campaña.'; }
       s.player.personalFunds += 8; c.rep.popularidad = clamp(c.rep.popularidad + 1, 0, 100); return 'Tomas distancia; recuperas energía y recursos.';
     },

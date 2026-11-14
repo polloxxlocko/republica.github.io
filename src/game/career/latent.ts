@@ -25,7 +25,7 @@ import { appointMinister, coalitionMembers } from '../systems/government';
 import { listIdOf } from '../systems/elections';
 import { newId } from '../systems/util';
 import { addNews } from '../systems/news';
-import { bio, first, me, officeRank, partyInfluenceOf, progress } from './capital';
+import { bio, first, me, minorRoleBlocked, officeRank, partyInfluenceOf, progress } from './capital';
 import { OPEN_WEEKS } from './nominations';
 import { informants, knowledgeLevel, pushIntel, reliabilityOf, sourceQuality, verifyIntel } from './knowledge';
 
@@ -169,7 +169,7 @@ function resolve(s: GameState, rng: Rng, l: LatentSituation): void {
   switch (l.kind) {
     case 'equipo_figura': {
       const pool = chars.filter((x) => (x.partyId === actor.partyId || !x.partyId) && x.regionId === actor.regionId && !x.offices.some((o) => ELECTED.includes(o.type) || DESIGNATED.includes(o.type))).slice(0, 6);
-      const free = !c.offices.some((o) => ELECTED.includes(o.type) || DESIGNATED.includes(o.type) || o.type === 'asesor');
+      const free = !c.offices.some((o) => o.type === 'asesor') && !minorRoleBlocked(c, 'asesor');
       const ranked = consider(pool, free && (!c.partyId || !actor.partyId || c.partyId === actor.partyId || memoryBalance(actor, c.id) > 25), { mem: 1, tec: 0.25, rec: 0.1 });
       const win = ranked[0]?.x; if (!win) return;
       l.chosenId = win.id;

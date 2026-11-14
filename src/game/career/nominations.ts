@@ -135,6 +135,7 @@ export function aspireBlocked(s: GameState, electionId: string, office: OfficeTy
   if (s.week >= w.shortlist) return 'La preselección ya cerró para esta elección';
   if (ageOf(s, c) < minAgeFor(office)) return `Edad mínima: ${minAgeFor(office)} años (CPR / LOC)`;
   if (!eligibleUnits(s, office).some((u) => u.id === unitId)) return 'Requisito de residencia: debes postular donde resides';
+  if (office === 'concejal' && c.offices.some((o) => ['diputado', 'senador', 'gobernador', 'alcalde', 'ministro', 'presidente'].includes(o.type))) return 'Ya ejerces un cargo superior: no corresponde postular al concejo';
   if (!c.partyId) return office === 'alcalde' || office === 'gobernador' ? 'Como independiente debes reunir firmas (acción específica)' : 'Sin partido: necesitas un cupo de una lista (oportunidad) o afiliarte';
   if (s.parties[c.partyId]?.legalStatus === 'en_formacion') return 'Tu partido aún no está legalmente constituido';
   if (office === 'presidente' && c.offices.some((o) => o.type === 'presidente')) return 'No hay reelección presidencial inmediata';

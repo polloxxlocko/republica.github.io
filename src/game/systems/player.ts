@@ -21,7 +21,8 @@ import { EXTRA_DEFS } from '../career/agenda';
 import { accessBlocked } from '../career/access';
 import { hashNoise } from '../career/knowledge';
 import { agendaBlocked, fireMember, runAgenda } from '../career/agendaWeek';
-import { addTerritory, bio, homeCut, progress, unitComunas } from '../career/capital';
+import { FIELD_ACTIONS, FIELD_AGENDA_CATS, LEG_COST, LEG_LABELS, isDistrictWeek, legBlocked, legOf, legRun, markField, type LegAction } from '../career/legislature';
+import { addTerritory, bio, homeCut, minorRoleBlocked, progress, unitComunas } from '../career/capital';
 import { ORG_LABELS } from '../career/labels';
 import { coalitionAccepts, formCoalition, joinCoalition, leaveCoalition, membershipUtility } from './coalitions';
 import { createParty, factionOf, leaveParty, makeFaction } from './parties';
@@ -57,6 +58,7 @@ export type PlayerAction =
   | { type: 'renunciar_cargo'; office: OfficeType }
   | { type: 'cambiar_jornada'; mode: 'completa' | 'parcial' | 'dedicacion' }
   | { type: 'agenda'; offerId: string }
+  | LegAction
   | { type: 'despedir'; memberId: string }
   | { type: 'retirar_candidatura'; electionId: string }
   | { type: 'configurar_campana'; budget: number; region: RegionId | null; message: Dim | null; side: -1 | 1 }
@@ -89,7 +91,7 @@ export const ACTION_COST: Record<PlayerAction['type'], number> = {
   entrevista: 1, visita_region: 2, reunion: 1, acto_politico: 2, recaudar: 1, redes: 1, formacion: 1, mocion: 2,
   aspirar: 1, retirar_aspiracion: 0, buscar_respaldo: 1, firmas_independiente: 2, responder_oportunidad: 0, asamblea: 1, organizacion_social: 1,
   trabajar_campana: 1, propuesta_politica: 1, debate_publico: 1, mediar_conflicto: 1, voto_parlamentario: 0, semana_distrital: 1, fiscalizacion: 1,
-  atender_vecinos: 1, renunciar_cargo: 0, cambiar_jornada: 0, agenda: 0, despedir: 0, retirar_candidatura: 0, configurar_campana: 0, actividad_campana: 1, contratar_equipo: 0,
+  atender_vecinos: 1, renunciar_cargo: 0, cambiar_jornada: 0, agenda: 0, despedir: 0, ...LEG_COST, retirar_candidatura: 0, configurar_campana: 0, actividad_campana: 1, contratar_equipo: 0,
   postular_interna: 1, organizar_faccion: 1, renunciar_partido: 0, unirse_partido: 1, fundar_partido: 2, proponer_alianza: 1,
   salir_coalicion: 0, disciplinar_bancada: 1, negociar_partido: 1, lobby: 1, urgencia: 0, retirar_proyecto: 0, decision_ejecutivo: 0,
   anunciar_politica: 1, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
@@ -103,7 +105,7 @@ export const ACTION_LABELS: Record<PlayerAction['type'], string> = {
   firmas_independiente: 'Reunir firmas (independiente)', responder_oportunidad: 'Responder a una oportunidad', asamblea: 'Asistir a una asamblea partidaria',
   organizacion_social: 'Trabajo en organización social', trabajar_campana: 'Trabajar en la campaña de otra persona', propuesta_politica: 'Publicar una propuesta',
   debate_publico: 'Participar en un debate público', mediar_conflicto: 'Mediar en un conflicto local', voto_parlamentario: 'Votar en sala',
-  semana_distrital: 'Semana distrital', fiscalizacion: 'Fiscalizar al gobierno', atender_vecinos: 'Atención de vecinos', renunciar_cargo: 'Renunciar a un cargo', cambiar_jornada: 'Cambiar tu jornada laboral', agenda: 'Actividad de la agenda semanal', despedir: 'Prescindir de alguien de tu equipo',
+  semana_distrital: 'Semana distrital', fiscalizacion: 'Fiscalizar al gobierno', atender_vecinos: 'Atención de vecinos', renunciar_cargo: 'Renunciar a un cargo', cambiar_jornada: 'Cambiar tu jornada laboral', agenda: 'Actividad de la agenda semanal', despedir: 'Prescindir de alguien de tu equipo', ...LEG_LABELS,
   retirar_candidatura: 'Retirar candidatura', configurar_campana: 'Configurar campaña',
   actividad_campana: 'Actividad de campaña', contratar_equipo: 'Contratar equipo', postular_interna: 'Postular a la presidencia del partido',
   organizar_faccion: 'Organizar tu sector interno', renunciar_partido: 'Renunciar al partido', unirse_partido: 'Afiliarse a un partido',
@@ -188,8 +190,10 @@ export function actionBlocked(s: GameState, a: PlayerAction): string | null {
       const b = s.bills.find((x) => x.id === a.billId);
       return !b || b.closedWeek !== undefined ? 'Proyecto no disponible' : null;
     }
-    case 'semana_distrital': case 'fiscalizacion': return isLegislator(c) ? null : 'Solo parlamentarios';
-    case 'atender_vecinos': return hasOffice(c, 'concejal') || hasOffice(c, 'alcalde') ? null : 'Requiere ser concejal o alcalde/sa';
+    case 'semana_distrital': return !isLegislator(c) ? 'Solo parlamentarios' : isDistrictWeek(s) ? null : 'Solo en la semana distrital (la última de cada mes)';
+    case 'fiscalizacion': return isLegislator(c) ? null : 'Solo parlamentarios';
+    case 'atender_vecinos': return hasOffice(c, 'concejal') || hasOffice(c, 'alcalde') || legOf(s)?.districtOffice ? null : 'Requiere ser concejal, alcalde/sa o tener oficina distrital';
+    case 'intervencion_sala': case 'indicaciones': case 'poner_en_tabla': case 'sesion_especial': case 'interpelacion': case 'citar_comision': case 'oficina_distrital': case 'bancada_transversal': case 'declaracion_intereses': case 'pareo': case 'presidir_comision': case 'jefatura_bancada': case 'audiencia_lobby': return legBlocked(s, a);
     case 'agenda': return agendaBlocked(s, a.offerId);
     case 'despedir': return (s.career.team ?? []).some((m) => m.id === a.memberId) ? null : 'No está en tu equipo';
     case 'cambiar_jornada': return hasPaidOffice(c) ? 'Con un cargo remunerado no necesitas otra jornada' : s.career.workMode === a.mode ? 'Ya tienes esa jornada' : (s.career.cooldowns.jornada ?? -99) > s.week ? 'Cambiaste de jornada hace poco' : a.mode === 'dedicacion' && s.player.personalFunds < 6 ? 'Sin ahorros (6 MM$) no puedes dejar tu trabajo' : null;
@@ -201,7 +205,9 @@ export function actionBlocked(s: GameState, a: PlayerAction): string | null {
     case 'renunciar_partido': return c.partyId ? null : 'No militas en un partido';
     case 'unirse_partido': return c.partyId ? 'Primero debes renunciar a tu partido' : !s.parties[a.partyId]?.active ? 'Partido no disponible' : null;
     case 'fundar_partido': return c.rep.reconocimiento < 25 ? 'Requiere reconocimiento nacional ≥ 25' : s.player.personalFunds < 50 ? 'Requiere 50 MM$' : !a.name.trim() || !a.short.trim() ? 'Indica nombre y sigla' : Object.values(s.parties).some((p) => p.name.toLowerCase() === a.name.trim().toLowerCase() || p.short.toLowerCase() === a.short.trim().toLowerCase()) ? 'Nombre o sigla ya existen' : null;
-    case 'proponer_alianza': case 'salir_coalicion': case 'disciplinar_bancada': return leadsParty(s) ? (a.type === 'salir_coalicion' && c.partyId && listIdOf(s, c.partyId) === c.partyId ? 'Tu partido no está en una coalición' : null) : 'Debes presidir tu partido';
+    case 'disciplinar_bancada': if (legOf(s)?.caucusLead) return null;
+      return leadsParty(s) ? null : 'Debes presidir tu partido o ser jefe/a de bancada';
+    case 'proponer_alianza': case 'salir_coalicion': return leadsParty(s) ? (a.type === 'salir_coalicion' && c.partyId && listIdOf(s, c.partyId) === c.partyId ? 'Tu partido no está en una coalición' : null) : 'Debes presidir tu partido';
     case 'negociar_partido': case 'lobby': {
       const b = s.bills.find((x) => x.id === a.billId);
       if (!b || b.closedWeek !== undefined) return 'Proyecto no disponible';
@@ -253,6 +259,8 @@ export function applyAction(s: GameState, rng: Rng, a: PlayerAction): string {
   const fat = actionFatigue(s, a.type);
   const rep0 = Object.fromEntries(REP_KEYS.map((k) => [k, c.rep[k]])) as Record<typeof REP_KEYS[number], number>;
   const terr0 = { ...s.career.capital.territory }; const org0 = s.career.capital.organization; const funds0 = s.player.personalFunds;
+  if (FIELD_ACTIONS.has(a.type) || (a.type === 'agenda' && FIELD_AGENDA_CATS.has(s.career.agenda?.offers.find((o) => o.id === a.offerId)?.category ?? ''))) markField(s);
+  const lg = legOf(s); if (lg) { if (a.type === 'mocion') lg.record.motions++; if (a.type === 'fiscalizacion') lg.record.oficios++; }
   const msg = applyActionInner(s, rng, a);
   const sat = (before: number, after: number) => after > before ? before + (after - before) * fat * Math.max(0.05, 1 - before / 105) : after;
   for (const k of REP_KEYS) c.rep[k] = sat(rep0[k], c.rep[k]);
@@ -381,7 +389,7 @@ function applyActionInner(s: GameState, rng: Rng, a: PlayerAction): string {
       s.career.capital.organization = clamp(s.career.capital.organization + 1.2, 0, 100);
       c.rep.confianzaGrupos.clasesMedias = clamp((c.rep.confianzaGrupos.clasesMedias ?? 0) + 0.5, -100, 100);
       bump(c, 'redes', 0.4); bump(c, 'liderazgo', 0.2);
-      if (!c.offices.some((o) => o.type === 'dirigente_social') && s.career.capital.territory[home] > 18 && rng.chance(0.15)) {
+      if (!c.offices.some((o) => o.type === 'dirigente_social') && !minorRoleBlocked(c, 'dirigente_social') && s.career.capital.territory[home] > 18 && rng.chance(0.15)) {
         c.offices.push({ type: 'dirigente_social', regionId: c.regionId, comuna: c.comuna, since: s.week, label: s.career.origin.organization ? ORG_LABELS[s.career.origin.organization] : 'Organización comunitaria' });
         return 'Tu trabajo es reconocido: te eligen en la directiva de la organización.';
       }
@@ -447,6 +455,7 @@ function applyActionInner(s: GameState, rng: Rng, a: PlayerAction): string {
       c.rep.popularidad = clamp(c.rep.popularidad + 0.5, 0, 100);
       return `Atiendes vecinos en ${o.comuna ?? c.comuna}: el arraigo crece lentamente.`;
     }
+    case 'intervencion_sala': case 'indicaciones': case 'poner_en_tabla': case 'sesion_especial': case 'interpelacion': case 'citar_comision': case 'oficina_distrital': case 'bancada_transversal': case 'declaracion_intereses': case 'pareo': case 'presidir_comision': case 'jefatura_bancada': case 'audiencia_lobby': return legRun(s, rng, a);
     case 'agenda': { const o = s.career.agenda!.offers.find((x) => x.id === a.offerId)!; s.player.actionPoints -= o.cost; return runAgenda(s, rng, a.offerId); }
     case 'despedir': return fireMember(s, a.memberId);
     case 'cambiar_jornada': {
