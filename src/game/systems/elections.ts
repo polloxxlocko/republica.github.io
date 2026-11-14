@@ -22,6 +22,7 @@ import { legislativeRecordBonus } from '../career/legislature';
 import { nomineesFor } from '../career/nominations';
 import { ageOf, candidateQuality, createCharacter, fullName, removeOffice, remember } from './characters';
 import { addHistory, currentISO, ideoDistance, newId, log, strongholdFactor } from './util';
+import { addNews } from './news';
 
 export const ELECTION_LABELS: Record<ElectionType, string> = {
   presidencial: 'Presidencial (1ª vuelta)', presidencial_2v: 'Presidencial (2ª vuelta)', diputados: 'Diputadas y Diputados',
@@ -528,7 +529,6 @@ export function pickPresidentialCandidate(s: GameState, rng: Rng, listId: string
 function presidentialField(s: GameState, rng: Rng): { id: string; partyId: string; listId: string }[] {
   const lists = new Set(competingParties(s).map((p) => listIdOf(s, p)));
   const field: { id: string; partyId: string; listId: string }[] = [];
-  const player = s.characters[s.player.characterId];
   for (const l of lists) {
     const support = (s.coalitions[l]?.members ?? [l]).reduce((a, p) => a + (s.nationalIntention[p] ?? 0), 0);
     // Partidos pequeños sin coalición no siempre presentan candidatura (requisito de firmas/costo)
@@ -562,17 +562,34 @@ function presidentialField(s: GameState, rng: Rng): { id: string; partyId: strin
     const o = createCharacter(s, rng, { partyId: null, regionId: rng.pick(REGIONS).id, ideology: center, ideologySd: 20, quality: rng.normal(60, 6), minAge: 38, maxAge: 62, personality: 'mediatico', recognition: 40 });
     field.push({ id: o.id, partyId: 'IND', listId: o.id });
   }
-  // Candidatura del jugador fuera de coalición (independiente o propio partido)
+  addPlayerPresidential(s, field);
+  return field;
+}
+
+/** Candidatura del jugador fuera de coalición (independiente o propio partido). */
+function addPlayerPresidential(s: GameState, field: { id: string; partyId: string; listId: string }[]): void {
+  const player = s.characters[s.player.characterId];
   if (player && isPlayerFree(s) && s.player.candidacies.some((c) => c.office === 'presidente' && c.approved && c.electionId.startsWith('presidencial')) && !field.some((f) => f.id === player.id)) {
     const l = player.partyId ? listIdOf(s, player.partyId) : player.id;
     const existing = field.findIndex((f) => f.listId === l);
     if (existing >= 0) field.splice(existing, 1);
     field.push({ id: player.id, partyId: player.partyId ?? 'IND', listId: l });
   }
-  return field;
 }
 
-function presidentialOptions(s: GameState, field: { id: string; partyId: string; listId: string }[], viability: Record<string, number>): VoteOption[] {
+/** Semanas antes de la presidencial en que se cierra la inscripción de candidaturas (regla del juego, ~90 días). */
+export const PRES_REGISTRATION_WEEKS = 13;
+
+/** Cierre de inscripción: el campo presidencial queda fijo; las encuestas miden esas candidaturas. */
+export function registerPresidentialField(s: GameState, rng: Rng): void {
+  const e = s.calendar.find((x) => !x.done && x.type === 'presidencial' && x.week >= s.week);
+  if (!e || e.week - s.week > PRES_REGISTRATION_WEEKS || s.registeredPresidential?.electionId === e.id) return;
+  const field = presidentialField(s, rng);
+  s.registeredPresidential = { electionId: e.id, week: s.week, field };
+  addNews(s, rng, 'elecciones', `Cierra la inscripción: ${field.length} candidaturas presidenciales`, field.map((f) => fullName(s.characters[f.id])).join(', ') + '.', 4);
+}
+
+export function presidentialOptions(s: GameState, field: { id: string; partyId: string; listId: string }[], viability: Record<string, number>): VoteOption[] {
   return field.map((f) => {
     const c = s.characters[f.id];
     const boost = c.isPlayer ? campaignBoostForPlayer(s) * 22 : clamp((s.parties[f.partyId]?.funds ?? 0) / 400, 0, 1) * 10;
@@ -586,7 +603,10 @@ function presidentialOptions(s: GameState, field: { id: string; partyId: string;
 function runPresidential(s: GameState, rng: Rng, election: ScheduledElection): ElectionResult {
   const result = makeResult(s, election);
   let field: { id: string; partyId: string; listId: string }[];
-  if (election.type === 'presidencial') field = presidentialField(s, rng);
+  if (election.type === 'presidencial') {
+    const reg = s.registeredPresidential?.electionId === election.id ? s.registeredPresidential.field.filter((f) => s.characters[f.id]?.status === 'activo') : null;
+    if (reg && reg.length >= 2) { field = [...reg]; addPlayerPresidential(s, field); } else field = presidentialField(s, rng);
+  }
   else {
     const first = [...s.results].reverse().find((r) => r.type === 'presidencial');
     field = (first?.candidates ?? []).filter((c) => c.id === first?.winnerId || c.id === first?.runnerUpId);

@@ -56,6 +56,16 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
       await page.getByRole('button', { name, exact: true }).click();
       await expect(page.locator('main h1').first()).toBeVisible();
     }
+    // Encuestas: informe con aviso de ficción, comparador con gráfico y fichas documentadas
+    await page.getByRole('navigation').getByRole('button', { name: 'Encuestas', exact: true }).click();
+    await expect(page.getByRole('note').first()).toContainText('Encuesta ficticia generada por REPÚBLICA: CHILE');
+    await page.getByTestId('informe').first().click();
+    await expect(page.locator('#informe-titulo')).toBeVisible();
+    await expect(page.getByText('Ficha técnica (simulada)')).toBeVisible();
+    await page.getByRole('tab', { name: 'Comparador' }).click();
+    await expect(page.locator('.recharts-surface').first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Estudios', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Encuesta CEP' })).toBeVisible();
     // Detalle de partido y hemiciclo
     await page.getByRole('navigation').getByRole('button', { name: 'Partidos', exact: true }).click();
     await page.getByTestId('ficha-UDI').click();
@@ -65,11 +75,13 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
 
     // Guardar y recargar
     await page.getByRole('navigation').getByRole('button', { name: 'Partida', exact: true }).click();
+    const savedDate = (await page.getByTestId('fecha').textContent()) ?? '';
+    expect(savedDate).not.toContain('9 de noviembre de 2026'); // el calendario avanzó
     await page.getByTestId('guardar').click();
     await expect(page.getByText('Partida guardada.')).toBeVisible();
     await page.reload();
     await page.getByRole('button', { name: /Continuar/ }).click();
-    await expect(page.getByTestId('fecha')).toContainText('2027');
+    await expect(page.getByTestId('fecha')).toHaveText(savedDate); // se recupera la misma fecha guardada
     expect(errors).toEqual([]);
   });
 

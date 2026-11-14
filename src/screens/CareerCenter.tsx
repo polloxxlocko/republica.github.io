@@ -268,7 +268,7 @@ export function CareerCenter() {
           )}
 
           {ctx.shows.partyNews && (
-            <Section title="Encuestas" kicker="Promedio de 8 semanas · estimación, no resultado">
+            <Section title="Encuestas" kicker="Promedio ponderado de encuestas simuladas" right={<button className="btn-link" onClick={() => setScreen('encuestas')}>Informes</button>}>
               <div className="space-y-1.5">
                 {topPolls.map(([p, v]) => (
                   <div key={p} className="flex items-center gap-2 text-sm">

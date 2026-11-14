@@ -331,9 +331,8 @@ export interface Poll {
   kind: 'partidos' | 'presidencial' | 'aprobacion';
   values: Record<string, number>; // porcentaje estimado
   undecided: number;
+  effN?: number;            // tamaño efectivo (diseño y ponderación)
 }
-
-export interface Pollster { id: string; name: string; houseEffect: Record<string, number>; sample: number; method: string; frequency: number; }
 
 export interface Campaign {
   electionId: string;
@@ -814,6 +813,8 @@ export interface Settings {
   seed: number;
   scenarioId: string;
   autosaveEvery: number;
+  /** Nombres de las encuestadoras: reales (por defecto) o alternativas ficticias */
+  pollNames?: 'reales' | 'ficticios';
 }
 
 export interface GameState {
@@ -844,6 +845,8 @@ export interface GameState {
   calendar: ScheduledElection[];
   results: ElectionResult[];
   polls: Poll[];
+  /** Sistema de encuestas (publicaciones simuladas, parámetros ocultos, estudios privados) */
+  polling?: import('../polling/types').PollingState;
   news: NewsItem[];
   history: HistoryEntry[];
   pending: PendingDecision[];
@@ -857,6 +860,8 @@ export interface GameState {
   campaignSpend: Record<string, Partial<Record<RegionId, number>>>; // gasto de campaña acumulado con decaimiento
   rules: ElectoralRules;
   presidentialCandidates: Record<string, string>; // coalición/partido -> personaje (próxima presidencial)
+  /** Candidaturas presidenciales inscritas (se fijan al cierre de inscripción, ~90 días antes) */
+  registeredPresidential?: { electionId: string; week: number; field: { id: string; partyId: string; listId: string }[] };
   scenarioMeta: { id: string; name: string; referenceDate: string; disclaimer: string; provenance: Provenance[] };
   log: string[];              // registro técnico de cambios del último turno
   gameOver?: string;

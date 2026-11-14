@@ -34,7 +34,7 @@ export function generateWeeklyNews(s: GameState, rng: Rng, prev: Snapshot): void
     let best: string | null = null; let bd = 0;
     for (const k of Object.keys(avgNow)) { if (!cnt[k]) continue; const d = avgNow[k] - avgPrev[k] / cnt[k]; if (Math.abs(d) > Math.abs(bd)) { bd = d; best = k; } }
     if (best && Math.abs(bd) > 1.3 && s.parties[best]) {
-      addNews(s, rng, 'encuestas', `${s.parties[best].short} ${bd > 0 ? 'sube' : 'cae'} ${Math.abs(bd).toFixed(1)} puntos en el promedio de encuestas`, `Promedio actual: ${avgNow[best].toFixed(1)}%.`, 2, Math.sign(leftRight(s.parties[best].ideology)), bd > 0 ? 1 : -1);
+      addNews(s, rng, 'encuestas', `${s.parties[best].short} ${bd > 0 ? 'sube' : 'cae'} ${Math.abs(bd).toFixed(1)} puntos en el promedio de encuestas simuladas`, `Promedio actual: ${avgNow[best].toFixed(1)}%.`, 2, Math.sign(leftRight(s.parties[best].ideology)), bd > 0 ? 1 : -1);
     }
   }
   if (Math.abs(s.opinion.presidentialApproval - prev.approval) > 2.5) {

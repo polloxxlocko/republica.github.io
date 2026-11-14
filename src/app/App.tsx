@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, Building2, CalendarClock, FastForward, Flag, Landmark, LayoutDashboard, Map, Newspaper, Play, Save, SkipForward, Route, Vote, X, Zap, History as HistoryIcon } from 'lucide-react';
+import { PieChart, BarChart3, Building2, CalendarClock, FastForward, Flag, Landmark, LayoutDashboard, Map, Newspaper, Play, Save, SkipForward, Route, Vote, X, Zap, History as HistoryIcon } from 'lucide-react';
 import { useGame, type Screen } from '../stores/gameStore';
 import { MainMenu } from '../screens/MainMenu';
 import { NewGame } from '../screens/NewGame';
@@ -17,6 +17,7 @@ import { HistoryScreen } from '../screens/HistoryScreen';
 import { GameMenu } from '../screens/GameMenu';
 import { ElectionNight } from '../screens/ElectionNight';
 import { Credits } from '../screens/Credits';
+import { PollingDashboard } from '../screens/PollingDashboard';
 import { dateLabel, mainOffice, nextElectionInfo, partyColor, partyShort, playerChar, mm } from './selectors';
 import { officeLabel } from '../game/systems/characters';
 import { Portrait } from '../components/ui';
@@ -35,6 +36,7 @@ const NAV: { id: Screen; label: string; icon: typeof Map }[] = [
   { id: 'elecciones', label: 'Elecciones', icon: Vote },
   { id: 'gobierno', label: 'Gobierno', icon: Building2 },
   { id: 'economia', label: 'Economía', icon: BarChart3 },
+  { id: 'encuestas', label: 'Encuestas', icon: PieChart },
   { id: 'noticias', label: 'Noticias', icon: Newspaper },
   { id: 'historial', label: 'Historial', icon: HistoryIcon },
   { id: 'partida', label: 'Partida', icon: Save },
@@ -100,9 +102,9 @@ function Nav() {
   const ctx = game ? careerContext(game) : null;
   const byId = Object.fromEntries(NAV.map((n) => [n.id, n]));
   const own: Screen[] = ['panel', 'carrera', 'acciones', 'mapa'];
-  const national: Screen[] = ctx?.shows.government ? ['gobierno', 'congreso', 'economia', 'partidos', 'elecciones', 'noticias']
-    : ctx?.shows.institutional ? ['congreso', 'partidos', 'elecciones', 'noticias', 'gobierno', 'economia']
-    : ['partidos', 'elecciones', 'noticias', 'congreso', 'gobierno', 'economia'];
+  const national: Screen[] = ctx?.shows.government ? ['gobierno', 'encuestas', 'congreso', 'economia', 'partidos', 'elecciones', 'noticias']
+    : ctx?.shows.institutional ? ['congreso', 'partidos', 'elecciones', 'encuestas', 'noticias', 'gobierno', 'economia']
+    : ['partidos', 'elecciones', 'encuestas', 'noticias', 'congreso', 'gobierno', 'economia'];
   const groups: { label: string; ids: Screen[] }[] = [
     { label: 'Tu carrera', ids: own },
     { label: 'Política nacional', ids: national },
@@ -128,7 +130,7 @@ function Nav() {
   );
 }
 
-const VALID: Screen[] = ['panel', 'carrera', 'acciones', 'mapa', 'partidos', 'congreso', 'elecciones', 'gobierno', 'economia', 'noticias', 'historial', 'partida', 'noche', 'creditos'];
+const VALID: Screen[] = ['panel', 'carrera', 'acciones', 'mapa', 'partidos', 'congreso', 'elecciones', 'gobierno', 'economia', 'noticias', 'historial', 'partida', 'noche', 'creditos', 'encuestas'];
 
 export default function App() {
   const { game, screen, setScreen, refreshSaves } = useGame();
@@ -171,6 +173,7 @@ export default function App() {
     case 'partida': body = <GameMenu />; break;
     case 'noche': body = <ElectionNight />; break;
     case 'creditos': body = <Credits />; break;
+    case 'encuestas': body = <PollingDashboard />; break;
     default: body = <CareerCenter />;
   }
   return (

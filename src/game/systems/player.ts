@@ -30,6 +30,7 @@ import { announcePolicy, appointMinister, canAnnounce } from './government';
 import { resolveDecision } from './events';
 import { COMUNA_BY_CUT } from '../territory/data';
 import { buildOrganization, investCampaign, targetComunas, targetLabel, type TerritoryTarget } from '../territory/dynamics';
+import { orderPrivate, privateBlocked } from '../polling/private';
 
 export type PlayerAction =
   | { type: 'entrevista'; dim?: Dim; side?: -1 | 1 }
@@ -78,6 +79,7 @@ export type PlayerAction =
   | { type: 'retirar_proyecto'; billId: string }
   | { type: 'decision_ejecutivo'; billId: string; decision: 'promulgar' | 'vetar' }
   | { type: 'anunciar_politica'; policyId: string }
+  | { type: 'encargar_encuesta'; study: import('../polling/types').PrivateStudy; region?: RegionId; cut?: number; area?: PolicyArea }
   | { type: 'nombrar_ministro'; ministryId: string; charId: string }
   | { type: 'cadena_nacional' }
   | { type: 'gestion_local' }
@@ -94,7 +96,7 @@ export const ACTION_COST: Record<PlayerAction['type'], number> = {
   atender_vecinos: 1, renunciar_cargo: 0, cambiar_jornada: 0, agenda: 0, despedir: 0, ...LEG_COST, retirar_candidatura: 0, configurar_campana: 0, actividad_campana: 1, contratar_equipo: 0,
   postular_interna: 1, organizar_faccion: 1, renunciar_partido: 0, unirse_partido: 1, fundar_partido: 2, proponer_alianza: 1,
   salir_coalicion: 0, disciplinar_bancada: 1, negociar_partido: 1, lobby: 1, urgencia: 0, retirar_proyecto: 0, decision_ejecutivo: 0,
-  anunciar_politica: 1, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
+  anunciar_politica: 1, encargar_encuesta: 1, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
   campana_territorial: 1, trabajo_territorial: 1,
 };
 
@@ -111,7 +113,7 @@ export const ACTION_LABELS: Record<PlayerAction['type'], string> = {
   organizar_faccion: 'Organizar tu sector interno', renunciar_partido: 'Renunciar al partido', unirse_partido: 'Afiliarse a un partido',
   fundar_partido: 'Fundar un partido', proponer_alianza: 'Proponer alianza', salir_coalicion: 'Salir de la coalición', disciplinar_bancada: 'Ordenar la bancada',
   negociar_partido: 'Negociar con un partido', lobby: 'Conversar con un parlamentario', urgencia: 'Asignar urgencia', retirar_proyecto: 'Retirar proyecto',
-  decision_ejecutivo: 'Promulgar o vetar', anunciar_politica: 'Anunciar política', nombrar_ministro: 'Nombrar ministro/a', cadena_nacional: 'Cadena nacional',
+  decision_ejecutivo: 'Promulgar o vetar', anunciar_politica: 'Anunciar política', encargar_encuesta: 'Encargar encuesta', nombrar_ministro: 'Nombrar ministro/a', cadena_nacional: 'Cadena nacional',
   gestion_local: 'Gestión local', gestion_ministerial: 'Gestión ministerial', resolver_decision: 'Resolver decisión', retirarse: 'Retirarse de la política',
   campana_territorial: 'Invertir en campaña territorial', trabajo_territorial: 'Trabajo territorial (organización)',
 };
@@ -228,6 +230,7 @@ export function actionBlocked(s: GameState, a: PlayerAction): string | null {
       if (!c.partyId && !s.player.campaign) return 'Necesitas un partido o una candidatura activa';
       return targetComunas(a.target).length ? null : 'Territorio inválido';
     }
+    case 'encargar_encuesta': return privateBlocked(s, a.study);
     case 'trabajo_territorial': return c.partyId ? (targetComunas(a.target).length ? null : 'Territorio inválido') : 'Necesitas militar en un partido';
     default: return null;
   }
@@ -648,6 +651,7 @@ function applyActionInner(s: GameState, rng: Rng, a: PlayerAction): string {
       bump(c, 'redes', 0.3);
       return `Fortaleciste la organización de ${s.parties[c.partyId!].short} en ${targetLabel(a.target)}.`;
     }
+    case 'encargar_encuesta': return orderPrivate(s, a.study, { regionId: a.region, cut: a.cut, area: a.area });
     case 'retirarse': {
       s.player.careerOver = true;
       addHistory(s, 'jugador', 'Te retiras de la vida política', 'Tu trayectoria queda registrada en la historia de la partida.', 5);

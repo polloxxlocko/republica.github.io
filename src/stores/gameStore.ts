@@ -10,7 +10,7 @@ import type { NewGameConfig } from '../game/scenarios/chile2026';
 import { deleteSave, listSaves, loadGame, saveGame, rawSave, type SaveMeta } from '../persistence/db';
 import { deserialize, serialize } from '../persistence/saveFormat';
 
-export type Screen = 'menu' | 'nuevo' | 'panel' | 'carrera' | 'acciones' | 'mapa' | 'partidos' | 'congreso' | 'elecciones' | 'gobierno' | 'economia' | 'noticias' | 'historial' | 'partida' | 'noche' | 'creditos';
+export type Screen = 'menu' | 'nuevo' | 'panel' | 'carrera' | 'acciones' | 'mapa' | 'partidos' | 'congreso' | 'elecciones' | 'gobierno' | 'economia' | 'noticias' | 'historial' | 'partida' | 'noche' | 'creditos' | 'encuestas';
 
 export interface Toast { id: number; text: string; tone: 'info' | 'ok' | 'warn' | 'error' }
 

@@ -7,7 +7,7 @@ import { ELECTION_LABELS, REGISTRATION_WEEKS } from '../game/systems/elections';
 import { actionBlocked, me } from '../game/systems/player';
 import { AspirationPanel } from './Career';
 import { formatShort, weekToISO } from '../game/engine/dates';
-import { POLLSTERS } from '../game/data/institutions';
+import { pollsterName } from '../game/polling/registry';
 import { DIMS, DIM_LABELS } from '../game/rules/params';
 import { REGIONS } from '../game/data/geography';
 import { charName, partyColor, partyShort, pct, num, mm } from '../app/selectors';
@@ -94,10 +94,10 @@ export function Elections() {
           <Panel title="Últimos sondeos">
             <div className="space-y-2">{latest.map((p) => {
               const top = Object.entries(p.values).sort((a, b) => b[1] - a[1]).slice(0, 4);
-              return (<div key={p.id} className="rounded-lg border border-ink-700 p-2 text-xs"><div className="flex justify-between"><b>{POLLSTERS.find((x) => x.id === p.pollster)?.name}</b><span className="text-ink-400">S{p.week} · n={num(p.sample)} · ±{p.moe.toFixed(1)} pp</span></div><div className="mt-1 flex flex-wrap gap-1">{top.map(([k, v]) => <PartyChip key={k} g={g} id={k} label={`${partyShort(g, k)} ${v.toFixed(1)}`} />)}<span className="chip">NS/NR {p.undecided.toFixed(0)}</span></div></div>);
+              return (<div key={p.id} className="rounded-lg border border-ink-700 p-2 text-xs"><div className="flex justify-between"><b>{pollsterName(g, p.pollster)}</b><span className="text-ink-400">S{p.week} · n={num(p.sample)} · ±{p.moe.toFixed(1)} pp</span></div><div className="mt-1 flex flex-wrap gap-1">{top.map(([k, v]) => <PartyChip key={k} g={g} id={k} label={`${partyShort(g, k)} ${v.toFixed(1)}`} />)}<span className="chip">NS/NR {p.undecided.toFixed(0)}</span></div></div>);
             })}</div>
             {presPolls.length > 0 && (<div className="mt-4"><div className="eyebrow mb-1">Presidencial</div>{presPolls.slice(0, 4).map((p) => (
-              <div key={p.id} className="mb-1 text-xs"><b>{POLLSTERS.find((x) => x.id === p.pollster)?.name}</b> · {Object.entries(p.values).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${charName(g, k)} ${v.toFixed(1)}`).join(' · ')}</div>
+              <div key={p.id} className="mb-1 text-xs"><b>{pollsterName(g, p.pollster)}</b> · {Object.entries(p.values).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${charName(g, k)} ${v.toFixed(1)}`).join(' · ')}</div>
             ))}</div>)}
           </Panel>
         </div>

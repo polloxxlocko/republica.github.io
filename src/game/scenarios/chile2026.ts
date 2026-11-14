@@ -26,7 +26,7 @@ import { initialEconomy } from '../systems/economy';
 import { BASE_PRIORITIES } from '../systems/opinion';
 import { generateCalendar, listIdOf } from '../systems/elections';
 import { addHistory, ideoDistance, pairKey, strongholdFactor, zeroIdeology } from '../systems/util';
-import { weeklyPolls } from '../systems/polls';
+import { initPolling } from '../polling';
 import { weeklyPlayer } from '../systems/player';
 import { addTerritory, bio, emptyCareer, first, homeCut } from '../career/capital';
 import { generateAgenda } from '../career/agendaWeek';
@@ -297,7 +297,7 @@ export function createChile2026(cfg: NewGameConfig): GameState {
   createPlayer(s, rng, cfg, diff.startFunds);
   generateAgenda(s, rng);
   updateIntention(s);
-  weeklyPolls(s, rng);
+  initPolling(s, rng);
   weeklyPlayer(s);
   s.rng = rng.state;
   return s;

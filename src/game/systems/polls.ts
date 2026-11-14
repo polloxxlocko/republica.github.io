@@ -1,87 +1,47 @@
 /**
- * ENCUESTAS. Las encuestadoras (ficticias) miden la intención "real" con error muestral,
- * sesgos de casa, indecisos y ruido. Intención de voto estimada ≠ resultado electoral.
+ * ENCUESTAS — capa de compatibilidad. El sistema completo vive en src/game/polling (registro de
+ * encuestadoras, motor muestral, calendario, promedio, reacciones, estudios privados e historial).
+ * Aquí quedan las funciones que leen la información PÚBLICA para la IA y otros sistemas.
  */
 import type { GameState, Poll } from '../models/types';
-import { Rng } from '../engine/rng';
-import { POLLSTERS } from '../data/institutions';
-import { DIFFICULTY, clamp } from '../rules/params';
-import { newId } from './util';
-import { buildUtilityContext, computeShares, type VoteOption } from './electorate';
-import { candidateQuality, ageOf } from './characters';
-import { listIdOf, nextElection } from './elections';
+import { buildUtilityContext, computeShares } from './electorate';
+import { aggregate } from '../polling/aggregator';
+import { previewPresidentialField, presidentialOptions } from '../polling/field';
+
+export { previewPresidentialField };
 
 export function marginOfError(n: number): number { return 1.96 * Math.sqrt(0.25 / n) * 100; }
 
-function noisy(rng: Rng, p: number, n: number, house: number, k: number): number {
-  const se = Math.sqrt(Math.max(p, 0.5) / 100 * (1 - p / 100) / n) * 100;
-  return clamp(p + house + rng.normal(0, se * k), 0, 100);
-}
-
-/** Candidatos presidenciales probables (sin crear personajes). */
-export function previewPresidentialField(s: GameState): { id: string; partyId: string; listId: string }[] {
-  const lists = new Set(Object.values(s.parties).filter((p) => p.active && p.legalStatus !== 'en_formacion').map((p) => listIdOf(s, p.id)));
-  const out: { id: string; partyId: string; listId: string }[] = [];
-  for (const l of lists) {
-    const membersOf = s.coalitions[l]?.members ?? [l];
-    const support = membersOf.reduce((a, p) => a + (s.nationalIntention[p] ?? 0), 0);
-    if (!s.coalitions[l] && support < 4) continue;
-    let id = s.presidentialCandidates[l];
-    if (!id || s.characters[id]?.status !== 'activo') {
-      let best = ''; let bestQ = -1;
-      for (const c of Object.values(s.characters)) {
-        if (c.status !== 'activo' || !c.partyId || !membersOf.includes(c.partyId) || c.offices.some((o) => o.type === 'presidente') || ageOf(s, c) < 35) continue;
-        if (c.isPlayer && !s.player.candidacies.some((x) => x.office === 'presidente' && x.approved)) continue;
-        const q = candidateQuality(c) + (s.nationalIntention[c.partyId] ?? 0) * 0.6;
-        if (q > bestQ) { bestQ = q; best = c.id; }
-      }
-      id = best;
-    }
-    if (id) out.push({ id, partyId: s.characters[id].partyId ?? l, listId: l });
-  }
-  return out;
-}
-
+/** Intención presidencial «real» del motor (estado oculto: solo para el motor, nunca para la interfaz). */
 export function presidentialIntention(s: GameState): Record<string, number> {
-  const field = previewPresidentialField(s);
-  if (field.length === 0) return {};
-  const ctx = buildUtilityContext(s, true);
-  const opts: VoteOption[] = field.map((f) => ({ key: f.id, partyId: f.partyId, ideology: s.characters[f.id].ideology, quality: candidateQuality(s.characters[f.id]) }));
-  const res = computeShares(s, opts, ctx);
+  const opts = presidentialOptions(s);
+  if (opts.length === 0) return {};
+  const res = computeShares(s, opts, buildUtilityContext(s, true));
   const out: Record<string, number> = {};
-  for (const f of field) out[f.id] = ((res.national[f.id] ?? 0) / Math.max(res.totalValid, 1)) * 100;
+  for (const o of opts) out[o.key] = ((res.national[o.key] ?? 0) / Math.max(res.totalValid, 1)) * 100;
   return out;
 }
 
-export function weeklyPolls(s: GameState, rng: Rng): void {
-  const k = DIFFICULTY[s.settings.difficulty].pollNoise;
-  const nextPres = nextElection(s, ['presidencial']);
-  for (const pl of POLLSTERS) {
-    if (s.week % pl.frequency !== 0) continue;
-    const n = Math.round(pl.sample * (0.85 + rng.next() * 0.3));
-    const undecided = clamp(rng.normal(18, 4), 6, 35);
-    const values: Record<string, number> = {};
-    for (const [p, v] of Object.entries(s.nationalIntention)) values[p] = noisy(rng, v, n, pl.houseEffect[p] ?? 0, k) * (1 - undecided / 100);
-    s.polls.push({ id: newId(s, 'p'), week: s.week, pollster: pl.id, sample: n, moe: marginOfError(n), kind: 'partidos', values, undecided });
-    s.polls.push({ id: newId(s, 'p'), week: s.week, pollster: pl.id, sample: n, moe: marginOfError(n), kind: 'aprobacion', values: { aprueba: noisy(rng, s.opinion.presidentialApproval, n, (pl.houseEffect.REP ?? 0) * 0.5, k), desaprueba: 0 }, undecided: 0 });
-    const last = s.polls[s.polls.length - 1];
-    last.values.desaprueba = clamp(100 - last.values.aprueba - clamp(rng.normal(8, 2), 3, 15), 0, 100);
-    if (nextPres && nextPres.week - s.week <= 60 && pl.frequency <= 3) {
-      const pi = presidentialIntention(s);
-      const pv: Record<string, number> = {};
-      for (const [c, v] of Object.entries(pi)) pv[c] = noisy(rng, v, n, 0, k) * (1 - undecided / 100);
-      s.polls.push({ id: newId(s, 'p'), week: s.week, pollster: pl.id, sample: n, moe: marginOfError(n), kind: 'presidencial', values: pv, undecided });
-    }
-  }
-  if (s.polls.length > 600) s.polls.splice(0, s.polls.length - 600);
+/**
+ * Promedio PÚBLICO de encuestas (lo que ven el jugador y la IA), con el agregador ponderado:
+ * antigüedad, tamaño efectivo, tope por encuestadora y corrección parcial de efectos de casa.
+ * Si no hay mediciones en la ventana pedida, se amplía hasta 16 semanas.
+ */
+const avgCache = new WeakMap<GameState, Map<string, Record<string, number>>>();
+export function pollAverage(s: GameState, kind: Poll['kind'], weeks = 8): Record<string, number> {
+  const key = `${s.week}|${kind}|${weeks}|${s.polls.length}|${s.polls[s.polls.length - 1]?.id ?? ''}`;
+  let c = avgCache.get(s); if (!c) { c = new Map(); avgCache.set(s, c); }
+  const hit = c.get(key); if (hit) return { ...hit };
+  const res = computePollAverage(s, kind, weeks);
+  c.set(key, res);
+  return { ...res };
 }
 
-/** Promedio de encuestas recientes (lo que ven el jugador y la IA). */
-export function pollAverage(s: GameState, kind: Poll['kind'], weeks = 8): Record<string, number> {
-  const recent = s.polls.filter((p) => p.kind === kind && s.week - p.week <= weeks);
-  const out: Record<string, number> = {}; const cnt: Record<string, number> = {};
-  for (const p of recent) for (const [k, v] of Object.entries(p.values)) { out[k] = (out[k] ?? 0) + v; cnt[k] = (cnt[k] ?? 0) + 1; }
-  for (const k of Object.keys(out)) out[k] /= cnt[k];
+function computePollAverage(s: GameState, kind: Poll['kind'], weeks: number): Record<string, number> {
+  const ms = s.polls.filter((p) => p.kind === kind).map((p) => ({ house: p.pollster, week: p.week, n: p.sample, effN: p.effN ?? p.sample / 2, values: p.values }));
+  const agg = aggregate(ms, { asOf: s.week, window: weeks }) ?? aggregate(ms, { asOf: s.week, window: Math.max(weeks, 16) });
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(agg?.values ?? {})) out[k] = v.mean;
   return out;
 }
 

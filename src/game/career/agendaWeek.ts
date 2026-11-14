@@ -9,6 +9,7 @@
  * La mayoría de las acciones se declara como datos: condiciones, atributos que deciden el éxito y
  * efectos en caso de éxito o fracaso. Algunas (personas, proyectos, encuestas, equipo) tienen lógica propia.
  */
+import { orderPrivate, privateBlocked } from '../polling/private';
 import type { AgendaOffer, Attributes, Character, GameState, SocialGroup, TeamRole } from '../models/types';
 import { Rng } from '../engine/rng';
 import { AREA_LABELS, clamp } from '../rules/params';
@@ -20,7 +21,6 @@ import { partyStance } from '../systems/parliament';
 import { addNews } from '../systems/news';
 import { currentISO, newId } from '../systems/util';
 import { addTerritory, bio, capitalOf, homeCut, me, officeRank } from './capital';
-import { pushIntel } from './knowledge';
 
 type Ctx = Record<string, string | number>;
 type Cat = 'territorio' | 'medios' | 'digital' | 'partido' | 'sociedad' | 'cargo' | 'personal' | 'campana' | 'internacional' | 'calendario' | 'equipo' | 'contingencia';
@@ -245,15 +245,9 @@ const SPECIAL: AgendaDef[] = [
     run: (s, _rng, ctx) => { (s.career.team ??= []).push({ id: newId(s, 'tm'), role, name: String(ctx.name), since: s.week, salary: ROLE_INFO[role].salary, skill: Number(ctx.skill) }); bio(s, 'decision', `Contratas a ${ctx.name} (${ROLE_INFO[role].label.toLowerCase()})`, '', 0); return `${ctx.name} se suma a tu equipo.`; },
   })),
   {
-    id: 'encuesta_propia', cat: 'contingencia', cost: 0, funds: 12, risk: 'bajo', weight: () => 0.8, when: (s) => s.player.personalFunds >= 12,
-    title: () => 'Encargar una encuesta sobre tu figura', desc: () => 'Una consultora (ficticia) mide tu conocimiento y tu imagen en la región. Es una estimación con margen de error.',
-    run: (s, rng) => {
-      const c = P(s); const moe = 4 + rng.int(0, 3);
-      const known = clamp(Math.round((c.rep.reconocimientoRegional[c.regionId] ?? c.rep.reconocimiento) * 0.8 + rng.normal(0, moe / 2)), 1, 99);
-      const pos = clamp(Math.round(c.rep.popularidad - s.career.capital.rejection * 0.3 + rng.normal(0, moe / 2)), 1, 99);
-      pushIntel(s, { topic: 'reputacion', source: 'estimacion', reliability: 'alta', truth: true, text: `Encuesta encargada (${regionName(s)}): te conoce ~${known}% y, entre quienes te conocen, ~${pos}% tiene una opinión positiva (±${moe} puntos).` });
-      return `Resultados: te conoce cerca del ${known}% de la región; imagen positiva de ~${pos}% entre quienes te conocen (±${moe}).`;
-    },
+    id: 'encuesta_propia', cat: 'contingencia', cost: 0, risk: 'bajo', weight: () => 0.8, when: (s) => privateBlocked(s, 'estudio_regional') === null,
+    title: () => 'Encargar un estudio regional sobre tu figura', desc: () => 'Una consultora (ficticia) mide intención por partido, problemas y tu conocimiento e imagen en la región. Es un estudio muestral: tiene error y efectos de método.',
+    run: (s) => orderPrivate(s, 'estudio_regional', { regionId: P(s).regionId }),
   },
   {
     id: 'acompanar_autoridad', cat: 'contingencia', cost: 1, risk: 'medio', weight: () => 1.2,

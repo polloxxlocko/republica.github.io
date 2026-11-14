@@ -2,7 +2,7 @@
  * Instituciones: ministerios reales (nombres documentados), medios y encuestadoras FICTICIOS.
  * Los medios y encuestadoras son inventados a propósito para no atribuir noticias a medios reales.
  */
-import type { MediaOutlet, Ministry, Pollster } from '../models/types';
+import type { MediaOutlet, Ministry } from '../models/types';
 
 export const MINISTRIES: Ministry[] = [
   { id: 'interior', name: 'Interior', area: 'probidad', weight: 1.0 },
@@ -43,10 +43,3 @@ export const MEDIA: MediaOutlet[] = [
   { id: 'canalsur', name: 'Señal Sur TV', kind: 'tv', lean: 0.2, reach: 0.9 },
 ];
 
-/** Encuestadoras ficticias con sesgos de casa simulados (pp por partido). */
-export const POLLSTERS: Pollster[] = [
-  { id: 'austral', name: 'Encuestadora Austral', houseEffect: { REP: 1.2, FA: -0.8 }, sample: 1000, method: 'Telefónica', frequency: 1 },
-  { id: 'pulso', name: 'Pulso Ciudadano', houseEffect: { PDG: 1.5, PS: -0.5 }, sample: 750, method: 'Online panel', frequency: 2 },
-  { id: 'barometro', name: 'Barómetro Nacional', houseEffect: { PC: 0.8, UDI: -0.6 }, sample: 1400, method: 'Presencial', frequency: 6 },
-  { id: 'termometro', name: 'Termómetro Social', houseEffect: { PNL: 1.0, PDC: -0.4 }, sample: 900, method: 'Mixta', frequency: 3 },
-];

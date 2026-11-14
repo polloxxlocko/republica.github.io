@@ -20,7 +20,7 @@ import type { Character, GameState, LatentSituation, Opportunity, OfficeType, Se
 import { Rng } from '../engine/rng';
 import { clamp } from '../rules/params';
 import { MINISTRY_BY_ID } from '../data/institutions';
-import { ageOf, candidateQuality, fullName, memoryBalance, officeLabel, remember, removeOffice } from '../systems/characters';
+import { ageOf, candidateQuality, fullName, memoryBalance, officeLabel, remember, removeOffice, retire } from '../systems/characters';
 import { appointMinister, coalitionMembers } from '../systems/government';
 import { listIdOf } from '../systems/elections';
 import { newId } from '../systems/util';
@@ -363,7 +363,7 @@ export function weeklyLatent(s: GameState, rng: Rng): void {
   rumors(s, rng);
   for (const l of active(s)) if (s.week >= l.decideWeek) resolve(s, rng, l);
   // Los parlamentarios que decidieron retirarse dejan la política tras la elección
-  for (const x of Object.values(s.characters)) if (x.plansRetire && s.week > x.plansRetire + 2 && x.status === 'activo' && !x.offices.some((o) => o.type === 'diputado' || o.type === 'senador')) { x.status = 'retirado'; x.plansRetire = undefined; }
+  for (const x of Object.values(s.characters)) if (x.plansRetire && s.week > x.plansRetire + 2 && x.status === 'activo' && !x.offices.some((o) => o.type === 'diputado' || o.type === 'senador')) { x.plansRetire = undefined; retire(s, x, 'retirado'); }
   if (s.career.latent.length > 120) s.career.latent = s.career.latent.filter((l) => l.status === 'latente' || s.week - l.decideWeek < 104);
   void listIdOf; void officeRank;
 }

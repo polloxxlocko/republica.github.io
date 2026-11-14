@@ -23,7 +23,8 @@ import { campaignSpending, decayCampaign, monthlyPositioning } from '../ai/party
 import { fillVacancies, motionPublished, processBills, spawnMotions } from '../systems/parliament';
 import { inaugurate, isInaugurationWeek, onPolicyBillClosed, presidentDecision, weeklyGovernment } from '../systems/government';
 import { processEvents } from '../systems/events';
-import { weeklyPolls } from '../systems/polls';
+import { weeklyPolling } from '../polling';
+import { registerPresidentialField } from '../systems/elections';
 import { applyAction, leadsParty, me, weeklyPlayer, type PlayerAction } from '../systems/player';
 import { generateWeeklyNews } from '../systems/newsGen';
 import { checkInvariants } from './invariants';
@@ -72,7 +73,8 @@ export function advanceWeek(prev: GameState, opts: { checkInvariants?: boolean }
   weeklyGovernment(s, rng);
   if (s.government.electId && isInaugurationWeek(s)) inaugurate(s, rng);
   const decisions = processEvents(s, rng);
-  weeklyPolls(s, rng);
+  registerPresidentialField(s, rng);
+  weeklyPolling(s, rng);
   const newResults = processElections(s, rng);
   if (newResults.length) {
     updateIntention(s); decayCampaign(s, 0.2);
