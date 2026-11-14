@@ -852,6 +852,8 @@ export interface GameState {
   media?: import('../media/types').MediaState;
   /** Conversaciones, relaciones multidimensionales, memoria política y compromisos */
   dialogue?: import('../dialogue/types').DialogueState;
+  /** Jugabilidad política: acontecimientos condicionados, tramas, iniciativas, ambiciones y rivales */
+  politics?: import('../politics/types').PoliticsState;
   news: NewsItem[];
   history: HistoryEntry[];
   pending: PendingDecision[];

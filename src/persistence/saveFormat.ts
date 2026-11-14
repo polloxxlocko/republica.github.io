@@ -6,6 +6,7 @@ import { SCHEMA_VERSION } from '../game/scenarios/chile2026';
 import { emptyPolling } from '../game/polling';
 import { initMedia } from '../game/media';
 import { emptyDialogue } from '../game/dialogue';
+import { emptyPolitics } from '../game/politics/ops';
 import { Rng, seedRng } from '../game/engine/rng';
 import { initTerritory, initialMayors } from '../game/territory/init';
 import { emptyCareer } from '../game/career/capital';
@@ -101,6 +102,7 @@ export function validateGame(g: unknown): string[] {
 export function repairGame(g: GameState): GameState {
   g.news ??= []; g.history ??= []; g.polls ??= []; g.polling ??= emptyPolling();
   g.dialogue ??= emptyDialogue();
+  g.politics ??= emptyPolitics();
   if (!g.media) initMedia(g, new Rng(seedRng(g.settings.seed ?? 1)));
   for (const n of g.news) n.outletId ??= 'elmercurio'; g.results ??= []; g.pending ??= []; g.crises ??= []; g.deferred ??= [];
   g.eventCooldowns ??= {}; g.eventCounts ??= {}; g.bills ??= []; g.economyHistory ??= []; g.opinionHistory ??= []; g.log ??= [];

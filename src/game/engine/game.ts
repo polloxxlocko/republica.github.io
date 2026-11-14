@@ -26,6 +26,7 @@ import { processEvents } from '../systems/events';
 import { weeklyPolling } from '../polling';
 import { mediaWeekly } from '../media';
 import { weeklyDialogue } from '../dialogue';
+import { weeklyPolitics } from '../politics/engine';
 import { registerPresidentialField } from '../systems/elections';
 import { applyAction, leadsParty, me, weeklyPlayer, type PlayerAction } from '../systems/player';
 import { generateWeeklyNews } from '../systems/newsGen';
@@ -90,6 +91,7 @@ export function advanceWeek(prev: GameState, opts: { checkInvariants?: boolean }
   generateWeeklyNews(s, rng, snapshot);
   mediaWeekly(s, rng);
   weeklyDialogue(s, rng);
+  weeklyPolitics(s, rng);
   if (opts.checkInvariants) for (const v of checkInvariants(s)) s.log.push(`INVARIANTE: ${v}`);
   s.rng = rng.state;
   return { state: s, events: [...s.log], newResults, newDecisions: decisions, newOpportunities };

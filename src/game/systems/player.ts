@@ -35,6 +35,10 @@ import { acceptInvite, answerInterview, declineInvite, inviteBlocked } from '../
 import { startBlocked, startSession, respond } from '../dialogue/engine';
 import { answerInvitation } from '../dialogue/ai';
 import { DEF_BY_ID } from '../dialogue/definitions';
+import { ensurePolitics, resolveEvent } from '../politics/engine';
+import { acceptOffer, offerBlocked } from '../politics/contextual';
+import { abandonInitiative, launchInitiative, runStep, stepBlocked } from '../politics/initiatives';
+import { setAmbition } from '../politics/ambitions';
 
 export type PlayerAction =
   | { type: 'entrevista'; dim?: Dim; side?: -1 | 1 }
@@ -84,6 +88,12 @@ export type PlayerAction =
   | { type: 'decision_ejecutivo'; billId: string; decision: 'promulgar' | 'vetar' }
   | { type: 'anunciar_politica'; policyId: string }
   | { type: 'conv_iniciar'; defId: string; args: Record<string, string | number> }
+  | { type: 'pol_resolver'; eventId: string; optionId: string }
+  | { type: 'pol_oferta'; offerId: string }
+  | { type: 'pol_iniciar'; defId: string }
+  | { type: 'pol_paso'; initiativeId: string; stepId: string }
+  | { type: 'pol_abandonar'; initiativeId: string }
+  | { type: 'pol_ambicion'; kind: import('../politics/types').AmbitionKind }
   | { type: 'conv_responder'; sessionId: string; optionId: string }
   | { type: 'conv_invitacion'; inviteId: string; decision: 'aceptar' | 'rechazar' | 'reprogramar' | 'consultar' }
   | { type: 'aceptar_entrevista'; inviteId: string }
@@ -106,7 +116,7 @@ export const ACTION_COST: Record<PlayerAction['type'], number> = {
   atender_vecinos: 1, renunciar_cargo: 0, cambiar_jornada: 0, agenda: 0, despedir: 0, ...LEG_COST, retirar_candidatura: 0, configurar_campana: 0, actividad_campana: 1, contratar_equipo: 0,
   postular_interna: 1, organizar_faccion: 1, renunciar_partido: 0, unirse_partido: 1, fundar_partido: 2, proponer_alianza: 1,
   salir_coalicion: 0, disciplinar_bancada: 1, negociar_partido: 1, lobby: 1, urgencia: 0, retirar_proyecto: 0, decision_ejecutivo: 0,
-  anunciar_politica: 1, encargar_encuesta: 1, conv_iniciar: 0, conv_responder: 0, conv_invitacion: 0, aceptar_entrevista: 1, rechazar_entrevista: 0, responder_entrevista: 0, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
+  anunciar_politica: 1, encargar_encuesta: 1, conv_iniciar: 0, conv_responder: 0, conv_invitacion: 0, pol_resolver: 0, pol_oferta: 0, pol_iniciar: 0, pol_paso: 0, pol_abandonar: 0, pol_ambicion: 0, aceptar_entrevista: 1, rechazar_entrevista: 0, responder_entrevista: 0, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
   campana_territorial: 1, trabajo_territorial: 1,
 };
 
@@ -123,7 +133,7 @@ export const ACTION_LABELS: Record<PlayerAction['type'], string> = {
   organizar_faccion: 'Organizar tu sector interno', renunciar_partido: 'Renunciar al partido', unirse_partido: 'Afiliarse a un partido',
   fundar_partido: 'Fundar un partido', proponer_alianza: 'Proponer alianza', salir_coalicion: 'Salir de la coalición', disciplinar_bancada: 'Ordenar la bancada',
   negociar_partido: 'Negociar con un partido', lobby: 'Conversar con un parlamentario', urgencia: 'Asignar urgencia', retirar_proyecto: 'Retirar proyecto',
-  decision_ejecutivo: 'Promulgar o vetar', anunciar_politica: 'Anunciar política', encargar_encuesta: 'Encargar encuesta', conv_iniciar: 'Iniciar conversación', conv_responder: 'Responder en una conversación', conv_invitacion: 'Responder una invitación', aceptar_entrevista: 'Aceptar entrevista', rechazar_entrevista: 'Rechazar entrevista', responder_entrevista: 'Responder en entrevista', nombrar_ministro: 'Nombrar ministro/a', cadena_nacional: 'Cadena nacional',
+  decision_ejecutivo: 'Promulgar o vetar', anunciar_politica: 'Anunciar política', encargar_encuesta: 'Encargar encuesta', conv_iniciar: 'Iniciar conversación', conv_responder: 'Responder en una conversación', conv_invitacion: 'Responder una invitación', pol_resolver: 'Decidir en un asunto político', pol_oferta: 'Emprender una acción concreta', pol_iniciar: 'Iniciar un proyecto político', pol_paso: 'Avanzar un proyecto', pol_abandonar: 'Abandonar un proyecto', pol_ambicion: 'Declarar una ambición', aceptar_entrevista: 'Aceptar entrevista', rechazar_entrevista: 'Rechazar entrevista', responder_entrevista: 'Responder en entrevista', nombrar_ministro: 'Nombrar ministro/a', cadena_nacional: 'Cadena nacional',
   gestion_local: 'Gestión local', gestion_ministerial: 'Gestión ministerial', resolver_decision: 'Resolver decisión', retirarse: 'Retirarse de la política',
   campana_territorial: 'Invertir en campaña territorial', trabajo_territorial: 'Trabajo territorial (organización)',
 };
@@ -244,6 +254,11 @@ export function actionBlocked(s: GameState, a: PlayerAction): string | null {
     case 'conv_iniciar': { const b = startBlocked(s, a.defId, a.args); if (b) return b; const k = DEF_BY_ID[a.defId]?.kind; return k && k !== 'breve' && s.player.actionPoints < 1 ? 'Requiere 1 PA' : null; }
     case 'conv_responder': return s.dialogue?.sessions.some((x) => x.id === a.sessionId && x.status === 'activa') ? null : 'Conversación no disponible';
     case 'conv_invitacion': return s.dialogue?.invitations.some((i) => i.id === a.inviteId && i.status === 'pendiente') ? null : 'Invitación no disponible';
+    case 'pol_resolver': return s.politics?.events.some((e) => e.id === a.eventId && e.status === 'pendiente') ? null : 'Asunto no disponible';
+    case 'pol_oferta': return s.politics ? offerBlocked({ s, rng: new Rng(s.rng) }, a.offerId) : 'No disponible';
+    case 'pol_iniciar': return null;
+    case 'pol_paso': { const i = s.politics?.initiatives.find((x) => x.id === a.initiativeId); return i ? stepBlocked({ s, rng: new Rng(s.rng) }, i, a.stepId) : 'Proyecto no disponible'; }
+    case 'pol_abandonar': case 'pol_ambicion': return null;
     case 'aceptar_entrevista': return inviteBlocked(s, a.inviteId, 'aceptar');
     case 'rechazar_entrevista': return inviteBlocked(s, a.inviteId, 'rechazar');
     case 'responder_entrevista': { const inv = s.media?.invites.find((i) => i.id === a.inviteId); return !inv || inv.status !== 'aceptada' ? 'Entrevista no disponible' : inv.questions?.[a.index] && !inv.questions[a.index].answer ? null : 'Pregunta no disponible'; }
@@ -256,7 +271,7 @@ function bump(c: Character, attr: keyof Character['attrs'], v = 0.4): void { c.a
 
 /** Aplica la acción (muta el estado clonado). Devuelve un mensaje para el jugador. */
 const REP_KEYS = ['popularidad', 'prestigioTecnico', 'confianzaPartido', 'credibilidad', 'reconocimiento'] as const;
-const NO_FATIGUE = new Set<PlayerAction['type']>(['agenda', 'despedir', 'responder_oportunidad', 'resolver_decision', 'voto_parlamentario', 'configurar_campana', 'retirar_candidatura', 'retirar_aspiracion', 'renunciar_cargo', 'retirarse', 'aspirar', 'firmas_independiente', 'responder_entrevista', 'rechazar_entrevista', 'conv_iniciar', 'conv_responder', 'conv_invitacion']);
+const NO_FATIGUE = new Set<PlayerAction['type']>(['agenda', 'despedir', 'responder_oportunidad', 'resolver_decision', 'voto_parlamentario', 'configurar_campana', 'retirar_candidatura', 'retirar_aspiracion', 'renunciar_cargo', 'retirarse', 'aspirar', 'firmas_independiente', 'responder_entrevista', 'rechazar_entrevista', 'conv_iniciar', 'conv_responder', 'conv_invitacion', 'pol_resolver', 'pol_oferta', 'pol_iniciar', 'pol_paso', 'pol_abandonar', 'pol_ambicion']);
 
 /** Factor de fatiga por repetir la misma acción (rendimientos decrecientes; se recupera ~20%/semana). */
 export function actionFatigue(s: GameState, type: PlayerAction['type']): number {
@@ -678,6 +693,12 @@ function applyActionInner(s: GameState, rng: Rng, a: PlayerAction): string {
     case 'conv_iniciar': { const r = startSession(s, rng, a.defId, a.args); if (typeof r === 'string') return `No es posible: ${r}`; if (DEF_BY_ID[a.defId].kind !== 'breve') s.player.actionPoints = Math.max(0, s.player.actionPoints - 1); return `${r.fiction ? '(Conversación ficticia) ' : ''}Comienza la conversación.`; }
     case 'conv_responder': return respond(s, rng, a.sessionId, a.optionId);
     case 'conv_invitacion': return answerInvitation(s, rng, a.inviteId, a.decision);
+    case 'pol_resolver': return resolveEvent(s, rng, a.eventId, a.optionId);
+    case 'pol_oferta': { ensurePolitics(s); return acceptOffer({ s, rng }, a.offerId); }
+    case 'pol_iniciar': { ensurePolitics(s); const r = launchInitiative({ s, rng }, a.defId); return typeof r === 'string' ? `No es posible: ${r}` : `Inicias: ${r.title}.`; }
+    case 'pol_paso': { ensurePolitics(s); return runStep({ s, rng }, a.initiativeId, a.stepId); }
+    case 'pol_abandonar': { ensurePolitics(s); return abandonInitiative({ s, rng }, a.initiativeId); }
+    case 'pol_ambicion': { ensurePolitics(s); return setAmbition({ s, rng }, a.kind); }
     case 'aceptar_entrevista': return acceptInvite(s, rng, a.inviteId);
     case 'rechazar_entrevista': return declineInvite(s, a.inviteId);
     case 'responder_entrevista': return answerInterview(s, rng, a.inviteId, a.index, a.answer);

@@ -1,21 +1,19 @@
 import { useState, type ReactNode } from 'react';
 import { useGame } from '../stores/gameStore';
-import type { Dim, OfficeType, PolicyArea, RegionId, SocialGroup } from '../game/models/types';
+import type { OfficeType, PolicyArea, SocialGroup } from '../game/models/types';
 import { COMMISSION_BY_ID, MINISTRY_OPTIONS, billsInMyCommissionStage, isDistrictWeek, legOf } from '../game/career/legislature';
 
 const GROUP_LABELS: Record<SocialGroup, string> = { empresarios: 'Gremios empresariales', sindicatos: 'Sindicatos', regiones: 'Organizaciones regionales', jovenes: 'Organizaciones juveniles', adultosMayores: 'Organizaciones de adultos mayores', clasesMedias: 'Organizaciones vecinales y de clase media' };
 import { ACTION_COST, ACTION_LABELS, actionBlocked, isLegislator, leadsParty, isPresident, type PlayerAction } from '../game/systems/player';
-import { REGIONS } from '../game/data/geography';
 import { MOTION_TEMPLATES } from '../game/data/policies';
-import { AREA_LABELS, DIMS, DIM_LABELS } from '../game/rules/params';
+import { AREA_LABELS } from '../game/rules/params';
 import { Panel } from '../components/ui';
 import { charName, partyShort, playerChar, sortedParties } from '../app/selectors';
-import { fullName, officeLabel } from '../game/systems/characters';
-import { situationReport } from '../game/career/knowledge';
-import { accessBlocked } from '../game/career/access';
+import { officeLabel } from '../game/systems/characters';
 import { hasPaidOffice } from '../game/systems/player';
 import { actionFatigue } from '../game/systems/player';
 import { TeamPanel, WeeklyAgenda } from '../components/WeeklyAgenda';
+import { ConcreteActions } from './PoliticsScreen';
 
 function ActionCard({ a, title, desc, children }: { a: PlayerAction; title?: string; desc: string; children?: ReactNode }) {
   const { game: g, act } = useGame();
@@ -39,10 +37,6 @@ function ActionCard({ a, title, desc, children }: { a: PlayerAction; title?: str
 
 export function Actions() {
   const { game: g } = useGame();
-  const [region, setRegion] = useState<RegionId>('RM');
-  const [dim, setDim] = useState<Dim | ''>('');
-  const [side, setSide] = useState<-1 | 1>(1);
-  const [target, setTarget] = useState('');
   const [motion, setMotion] = useState(0);
   const [joinParty, setJoinParty] = useState('');
   const [newName, setNewName] = useState('');
@@ -56,9 +50,6 @@ export function Actions() {
   const [legGroup, setLegGroup] = useState<SocialGroup>('sindicatos');
   if (!g) return null;
   const c = playerChar(g);
-  // Solo aparecen las personas a las que el personaje puede razonablemente acceder (punto 7)
-  const people = Object.values(g.characters).filter((x) => x.status === 'activo' && !x.isPlayer && (x.offices.length > 0 || x.rep.reconocimiento > 45) && !accessBlocked(g, x))
-    .sort((a, b) => (a.partyId === c.partyId ? -1 : 0) - (b.partyId === c.partyId ? -1 : 0) || b.rep.reconocimiento - a.rep.reconocimiento).slice(0, 80);
   const allyOptions = [...Object.values(g.coalitions).filter((k) => k.active && !k.members.includes(c.partyId ?? '')).map((k) => ({ id: k.id, label: `Coalición: ${k.name}` })), ...sortedParties(g).filter((p) => p.id !== c.partyId && p.legalStatus !== 'en_formacion').map((p) => ({ id: p.id, label: `${p.name}` }))];
 
   return (
@@ -82,43 +73,10 @@ export function Actions() {
         </Panel>
       )}
 
-      <Panel title={`Base y comunidad · ${c.comuna}`}>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <ActionCard a={{ type: 'organizacion_social' }} desc={`Trabajo en ${g.career.origin.organization ? 'tu organización' : 'organizaciones'} de ${c.comuna}: arraigo territorial y capacidad organizativa. Puede llevarte a su directiva.`} />
-          {c.partyId && <ActionCard a={{ type: 'asamblea' }} desc="Asambleas y reuniones de base: confianza partidaria, contactos y presencia interna." />}
-          <ActionCard a={{ type: 'propuesta_politica', area }} desc="Columna o documento de propuestas: prestigio técnico; el eco depende de la prioridad ciudadana del tema.">
-            <select className="input" value={area} onChange={(e) => setArea(e.target.value as PolicyArea)} aria-label="Tema">{(Object.keys(AREA_LABELS) as PolicyArea[]).map((a) => <option key={a} value={a}>{AREA_LABELS[a]}</option>)}</select>
-          </ActionCard>
-          <ActionCard a={{ type: 'debate_publico' }} desc="Foros, radios y debates locales. Visibilidad con riesgo: un error se paga en credibilidad." />
-          <ActionCard a={{ type: 'mediar_conflicto' }} desc={`Mediar en un conflicto vecinal o ambiental en ${c.comuna}. Si sale bien, gran arraigo; si sale mal, rechazo.`} />
-        </div>
-        <p className="mt-2 text-xs text-ink-400">{situationReport(g)[0].text}. Las candidaturas, cupos y nominaciones se gestionan en la pantalla <b>Carrera</b>.</p>
-      </Panel>
-
-      <Panel title="Territorio y medios">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <ActionCard a={{ type: 'entrevista', dim: dim || undefined, side }} desc="Visibilidad nacional. El resultado depende de comunicación y oratoria; puedes fijar una postura.">
-            <select className="input" value={dim} onChange={(e) => setDim(e.target.value as Dim | '')} aria-label="Tema de la entrevista"><option value="">Tema general</option>{DIMS.map((d) => <option key={d} value={d}>{DIM_LABELS[d].name}</option>)}</select>
-            {dim && <select className="input" value={side} onChange={(e) => setSide(Number(e.target.value) as -1 | 1)} aria-label="Postura"><option value={-1}>{DIM_LABELS[dim].neg}</option><option value={1}>{DIM_LABELS[dim].pos}</option></select>}
-          </ActionCard>
-          <ActionCard a={{ type: 'visita_region', region }} desc="Reconocimiento regional, redes y organización de tu partido en la región. Cuesta 2 MM$.">
-            <select className="input" value={region} onChange={(e) => setRegion(e.target.value as RegionId)} aria-label="Región">{REGIONS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
-          </ActionCard>
-          <ActionCard a={{ type: 'acto_politico' }} desc="Movilización y popularidad en tu región. Cuesta 8 MM$; el éxito depende de carisma y organización local." />
-          <ActionCard a={{ type: 'reunion', charId: target }} desc="Mejora relaciones (memoria de los actores). Solo aparecen las personas a las que tienes acceso: tu red, tu territorio, tu partido y tu cargo determinan con quién puedes reunirte. Con personas reales, la conversación es simulada.">
-            <select className="input" value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Con quién"><option value="">Elige a alguien…</option>{people.map((p) => <option key={p.id} value={p.id}>{fullName(p)} · {partyShort(g, p.partyId)}{p.offices[0] ? ` · ${p.offices[0].type.replace('_', ' ')}` : ''}</option>)}</select>
-          </ActionCard>
-        </div>
-      </Panel>
-
-      <Panel title="Recursos y preparación">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <ActionCard a={{ type: 'recaudar', mode: 'legal' }} title="Recaudar (aportes legales)" desc="Fondos declarados. Depende de tus redes y la confianza empresarial." />
-          <ActionCard a={{ type: 'recaudar', mode: 'agresivo' }} title="Recaudar (métodos agresivos)" desc="El doble de recursos, con riesgo de cuestionamientos si tu integridad es baja." />
-          <ActionCard a={{ type: 'redes' }} desc="Fortalece redes, organización local de tu partido y confianza partidaria." />
-          <ActionCard a={{ type: 'formacion' }} desc="Mejora conocimiento técnico y prestigio. Útil para ministerios y debates." />
-        </div>
-      </Panel>
+      <section aria-label="Acciones concretas" className="space-y-2">
+        <p className="text-sm text-ink-300">Ya no hay acciones genéricas («mejorar relaciones», «construir redes», «hacer un acto»): cada semana aparecen situaciones concretas con personas, territorio, duración, recursos y obstáculos. Los proyectos largos están en <b>Asuntos › Mis iniciativas</b>.</p>
+        <ConcreteActions g={g} />
+      </section>
 
       {c.partyId && (
         <Panel title={`Vida partidaria · ${partyShort(g, c.partyId)}`}>

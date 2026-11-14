@@ -21,8 +21,10 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
 
     // Acción con costo de PA
     await page.getByRole('navigation').getByRole('button', { name: 'Acciones', exact: true }).click();
-    await page.getByTestId('accion-redes').click();
-    await expect(page.getByTestId('pa')).toContainText('2/');
+    const accion = page.getByTestId('accion-concreta').filter({ has: page.getByRole('button', { name: 'Hacerlo' }) }).first();
+    const pa = (await page.getByTestId('pa').textContent()) ?? '';
+    await accion.getByRole('button', { name: 'Hacerlo' }).click();
+    await expect(page.getByTestId('pa')).not.toHaveText(pa);
 
     // Avanzar el calendario
     await page.getByTestId('avanzar').click();
@@ -74,6 +76,10 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
     await page.getByRole('tab', { name: 'Perfiles de medios' }).click();
     await expect(page.locator('#perfil-medio')).toHaveText('El Mercurio');
     await expect(page.getByText(/Informe 2026: Consumo de Noticias/).first()).toBeVisible();
+    // Asuntos: bandeja, iniciativas, tramas y movimientos
+    await page.getByRole('navigation').getByRole('button', { name: 'Asuntos', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Asuntos', exact: true })).toBeVisible();
+    for (const t of [/Mis iniciativas/, /Asuntos políticos/, /Movimientos/]) await page.getByRole('tab', { name: t }).click();
     // Conversaciones: agenda, compromisos, relaciones e historial (Archivo de Poder)
     await page.getByRole('navigation').getByRole('button', { name: 'Conversaciones', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Conversaciones' })).toBeVisible();

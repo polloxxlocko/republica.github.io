@@ -23,6 +23,8 @@ import { hasPaidOffice } from '../game/systems/player';
 import { careerContext, type CareerStage } from '../game/career/stage';
 import { photoFor, photoForComuna } from '../data/media/territorialPhotos';
 import { TerritorialPhoto } from '../components/TerritorialPhoto';
+import { EventCard } from './PoliticsScreen';
+import { inbox } from '../game/politics/engine';
 import { REGION_BY_ID } from '../game/data/geography';
 import { COMUNA_BY_CUT } from '../game/territory/data';
 import type { GameState, RegionId } from '../game/models/types';
@@ -60,6 +62,8 @@ function Featured({ g }: { g: GameState }) {
       </article>
     );
   }
+  const pe = inbox(g).find((x) => x.tier !== 'cotidiano');
+  if (pe) return <EventCard g={g} e={pe} />;
   const op = g.career.opportunities[0];
   if (op) {
     return (
@@ -128,6 +132,38 @@ function Featured({ g }: { g: GameState }) {
   );
 }
 
+/** Esta semana: proyecto activo, decisiones pendientes, próximos hitos, mensajes y agenda. */
+function ThisWeek({ g }: { g: GameState }) {
+  const { setScreen } = useGame();
+  const P = g.politics; if (!P) return null;
+  const pend = inbox(g); const ini = P.initiatives.find((i) => i.status === 'en_curso');
+  const msgs = (g.dialogue?.invitations ?? []).filter((i) => i.status === 'pendiente');
+  const name = (id: string) => { const c = g.characters[id]; return c ? `${c.firstName} ${c.lastName}` : ''; };
+  const milestones = [
+    ...P.initiatives.filter((i) => i.status === 'en_curso').map((i) => ({ w: i.deadline, t: `Definición: ${i.title}` })),
+    ...P.contests.filter((k) => k.status === 'abierta').map((k) => ({ w: k.closeWeek, t: `Se resuelve: ${k.label}` })),
+    ...g.calendar.filter((e) => !e.done && e.week >= g.week).slice(0, 2).map((e) => ({ w: e.week, t: ELECTION_LABELS[e.type] })),
+    ...(g.parties[playerChar(g).partyId ?? '']?.nextLeadershipWeek > g.week ? [{ w: g.parties[playerChar(g).partyId!].nextLeadershipWeek, t: 'Elección interna del partido' }] : []),
+  ].sort((a, b) => a.w - b.w).slice(0, 4);
+  const sinceSig = g.week - P.pacing.lastSignificant;
+  return (
+    <section aria-label="Esta semana" className="grid gap-4 border-y border-ink-600 py-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="esta-semana">
+      <div><div className="eyebrow">Decisiones pendientes</div>
+        {pend.length ? <ul className="mt-1 space-y-0.5 text-sm">{pend.slice(0, 3).map((e) => <li key={e.id} className={e.tier !== 'cotidiano' ? 'font-medium text-ink-50' : 'text-ink-300'}>{e.title}</li>)}</ul> : <p className="mt-1 text-sm text-ink-300">Nada pendiente{sinceSig > 2 ? ': semana tranquila para avanzar lo tuyo' : ''}.</p>}
+        <button className="btn-link mt-1 text-xs" onClick={() => setScreen('asuntos')}>Bandeja</button></div>
+      <div><div className="eyebrow">Proyecto activo</div>
+        {ini ? <><p className="mt-1 text-sm font-medium text-ink-50">{ini.title}</p><p className="text-xs text-ink-300">{ini.supporters.length ? `${ini.supporters.length} apoyo(s) comprometido(s)` : 'Aún sin apoyos comprometidos'}{ini.obstacles.some((o) => o.active) ? ` · obstáculo: ${ini.obstacles.find((o) => o.active)!.text.toLowerCase()}` : ''}</p></> : <p className="mt-1 text-sm text-ink-300">Sin proyecto en curso{P.ambition ? '' : '. Declara una ambición para orientar tu carrera'}.</p>}
+        <button className="btn-link mt-1 text-xs" onClick={() => setScreen('asuntos')}>Mis iniciativas</button></div>
+      <div><div className="eyebrow">Próximos hitos</div>
+        {milestones.length ? <ul className="mt-1 space-y-0.5 text-sm text-ink-200">{milestones.map((m, k) => <li key={k}><span className="font-mono text-[11px] text-ink-400">{Math.max(0, m.w - g.week)} sem.</span> {m.t}</li>)}</ul> : <p className="mt-1 text-sm text-ink-300">Sin hitos cercanos.</p>}</div>
+      <div><div className="eyebrow">Mensajes y agenda</div>
+        {msgs.length ? <ul className="mt-1 space-y-0.5 text-sm text-ink-200">{msgs.slice(0, 2).map((m) => <li key={m.id}>{name(m.fromId)} quiere conversar</li>)}</ul> : <p className="mt-1 text-sm text-ink-300">Sin mensajes nuevos.</p>}
+        <p className="mt-1 text-xs text-ink-300">{P.offers.length} acciones concretas disponibles esta semana.</p>
+        <button className="btn-link mt-1 text-xs" onClick={() => setScreen(msgs.length ? 'conversaciones' : 'asuntos')}>{msgs.length ? 'Conversaciones' : 'Ver acciones'}</button></div>
+    </section>
+  );
+}
+
 export function CareerCenter() {
   const { game: g, setScreen } = useGame();
   if (!g) return null;
@@ -188,6 +224,7 @@ export function CareerCenter() {
         {/* 2 · Columna principal */}
         <div className="min-w-0 space-y-8">
           <Featured g={g} />
+          {!g.player.careerOver && <ThisWeek g={g} />}
           {!g.player.careerOver && stagnationWeeks(g) > 104 && <p className="border-l-2 border-amber-400 pl-3 text-sm text-amber-200">Tu carrera lleva {Math.floor(stagnationWeeks(g) / 52)} años sin avances. En Carrera hay caminos para reactivarla.</p>}
 
           <Section title="Informe de situación" kicker="Lo que sabes (y cómo lo sabes)" right={<button className="btn-link" onClick={() => setScreen('carrera')}>Carrera</button>}>

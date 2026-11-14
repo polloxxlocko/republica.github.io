@@ -1,0 +1,202 @@
+/** E. CAMPAÑAS ELECTORALES y F. CONGRESO Y GOBIERNO. */
+import type { EventDef } from '../types';
+import { def, o, militant, pickMate, area, electionSoon, leaderOf } from './common';
+import {
+  me, party, home, comuna, region, name, firstN, ch, has, isLeg, disp, chance, skill, rel, rep, regRep, land, org, funds, commit, news, terr, P, weeksTo, cohesion,
+} from '../ops';
+import { launchInitiative } from '../initiatives';
+import { startArc } from '../arcs';
+import { clamp } from '../../rules/params';
+import { ideoDistance } from '../../systems/util';
+
+/** Parlamentarios del partido. Para pedidos o acciones atribuidas, solo personajes ficticios. */
+const myLegs = (w: Parameters<EventDef['require']>[0], fictionalOnly = true) => Object.values(w.s.characters).filter((c) => c.status === 'activo' && !c.isPlayer && (!fictionalOnly || !c.realId) && isLeg(c) && c.partyId === me(w).partyId);
+const openBill = (w: Parameters<EventDef['require']>[0], f: (b: (typeof w.s.bills)[number]) => boolean = () => true) => w.s.bills.find((b) => b.closedWeek === undefined && f(b));
+
+export const CAMPANA: EventDef[] = [
+  def({ id: 'e_se_abre_candidatura', cat: 'campana', tier: 'relevante', priority: 8, cooldown: 60, p: 0.7, tags: ['candidatura_propia'],
+    require: (w) => { if (!militant(w) || P(w).initiatives.some((i) => i.defId === 'candidatura' && i.status === 'en_curso') || w.s.player.candidacies.length) return null; const p = w.s.career.processes.find((x) => x.partyId === me(w).partyId && x.status === 'abierto' && w.s.week - x.openWeek < 4 && (x.unitId === String(home(w)) || x.unitId === me(w).regionId)); return p ? { proc: p.id, unit: p.unitLabel, office: p.office } : null; },
+    favor: (w) => (['candidatura', 'congreso', 'alcaldia'].includes(P(w).ambition?.kind ?? '') ? 3 : 1) * (1 + terr(w) / 30),
+    title: (_w, c) => `Se abre el proceso de candidaturas en ${c.unit}`,
+    text: (w, c) => `${party(w)!.short} abrió el proceso para definir su candidatura a ${c.office} en ${c.unit}. Tienes trabajo en el territorio: ¿te inscribes?`,
+    options: [
+      o('inscribirse', 'Inscribir tu aspiración (inicia un proyecto)', (w) => { const r = launchInitiative(w, 'candidatura'); return typeof r === 'string' ? `No es posible: ${r}` : 'Inicias el camino a la candidatura. Revisa «Mis iniciativas».'; }),
+      o('esperar', 'Esperar a ver quiénes se inscriben', () => 'Prefieres observar: el proceso sigue abierto unas semanas más.'),
+      o('no', 'No es tu momento', () => 'Decides no competir esta vez.'),
+    ] }),
+  def({ id: 'e_primaria', cat: 'campana', tier: 'relevante', priority: 6, cooldown: 100, p: 0.6, tags: ['primaria'],
+    require: (w) => { const e = w.s.calendar.find((x) => !x.done && x.type === 'primarias' && x.week - w.s.week < 12 && x.week > w.s.week); if (!e) return null; const cands = Object.entries(w.s.presidentialCandidates).map(([, id]) => ch(w, id)).filter((c) => c && c.status === 'activo').slice(0, 3); if (cands.length < 2) return null; return { a: cands[0]!.id, b: cands[1]!.id }; },
+    title: () => 'Primarias: tu sector debe definirse',
+    text: (w, c) => `Se acercan las primarias. En tu comunal se reparten entre ${name(w, c.a)} y ${name(w, c.b)}. Las figuras en competencia pueden ser personas reales: tu adhesión es una decisión simulada del juego.`,
+    options: [
+      o('a', (w, c) => `Hacer campaña por ${name(w, c.a)}`, (w, c) => { org(w, 1); P(w).counts.primaria_side = 1; P(w).counts.primaria_week = w.s.week; return `Trabajas por ${firstN(w, c.a)} en tu comuna.`; }),
+      o('b', (w, c) => `Hacer campaña por ${name(w, c.b)}`, (w) => { org(w, 1); P(w).counts.primaria_side = 2; return 'Trabajas por tu opción en tu comuna.'; }),
+      o('neutral', 'No tomar partido', () => 'Votas sin hacer campaña.'),
+    ] }),
+  def({ id: 'e_pide_apoyo_campana', cat: 'campana', tier: 'relevante', priority: 6, cooldown: 30, p: 0.4, tags: ['campana_ajena'],
+    require: (w) => { if (!electionSoon(w, 20)) return null; const p = w.s.career.processes.find((x) => x.status === 'resuelto' && x.partyId === me(w).partyId && x.aspirants.some((a) => a.status === 'nominado' && !w.s.characters[a.charId]?.realId && a.charId !== me(w).id)); const id = p?.aspirants.find((a) => a.status === 'nominado' && a.charId !== me(w).id)?.charId; return id ? { npc: id, unit: p!.unitLabel } : null; },
+    title: (w, c) => `${name(w, c.npc)} pide que coordines tu comuna`,
+    text: (w, c) => `${name(w, c.npc)}, candidato/a en ${c.unit}, necesita a alguien que conozca ${comuna(home(w))}. Ofrece incluirte en su comando de campaña.`,
+    options: [
+      o('aceptar', 'Aceptar y comprometerte', (w, c) => { commit(w, c.npc, 'trabajo_campana', `Coordinar ${comuna(home(w))} en la campaña de ${name(w, c.npc)}`, weeksTo(w, ['diputados', 'senadores', 'alcaldes', 'concejales', 'gobernadores'])); rel(w, c.npc, { cooperation: 8, trust: 5 }); return 'Quedas a cargo de la comuna. Tu compromiso se verificará con trabajo real de campaña.'; }),
+      o('parcial', 'Ayudar sin un cargo formal', (w, c) => { rel(w, c.npc, { cooperation: 3 }, 'menor'); return 'Apoyas algunos fines de semana.'; }),
+      o('no', 'Declinar', (w, c) => { rel(w, c.npc, { trust: -4 }); return 'Declinas; lo toma como una señal.'; }),
+    ] }),
+  def({ id: 'e_cambia_estrategia', cat: 'campana', tier: 'cotidiano', priority: 4, cooldown: 60, p: 0.2, tags: ['estrategia'],
+    require: (w) => { if (!electionSoon(w, 16)) return null; const p = w.s.career.processes.find((x) => x.status === 'resuelto' && x.partyId === me(w).partyId && x.aspirants.some((a) => a.status === 'nominado' && a.charId !== me(w).id)); const id = p?.aspirants.find((a) => a.status === 'nominado' && a.charId !== me(w).id)?.charId; if (!id) return null; return { npc: id, giro: chance(w, 0.5) ? 'endurecer el discurso en seguridad' : 'moderarse para captar votantes de centro' }; },
+    title: (w, c) => `Giro en la campaña de ${firstN(w, c.npc)}`,
+    text: (w, c) => `El comando de ${name(w, c.npc)} decidió ${c.giro}. Parte de la militancia está incómoda y te preguntan qué opinas.`,
+    options: [
+      o('alinear', 'Alinearte con el comando', (w, c) => { rel(w, c.npc, { trust: 4 }, 'menor'); return 'Defiendes el giro en tu comuna.'; }),
+      o('discrepar', 'Discrepar en privado', (w, c) => { rel(w, c.npc, { respect: 2 }, 'menor'); return 'Tu crítica llega al comando, que la toma en cuenta en parte.'; }),
+      o('publico', 'Discrepar públicamente', (w, c) => { rel(w, c.npc, { trust: -8, rivalry: 6 }); rep(w, 'credibilidad', 1); rep(w, 'confianzaPartido', -2); return 'Tu crítica pública molesta al comando y a la directiva.'; }),
+    ] }),
+  def({ id: 'e_nueva_encuesta', cat: 'campana', tier: 'cotidiano', priority: 3, cooldown: 20, p: 0.35, tags: ['encuesta'],
+    require: (w) => { const p = party(w); if (!p) return null; const ps = w.s.polls.filter((x) => x.kind === 'partidos' && w.s.week - x.week < 2); const prev = w.s.polls.filter((x) => x.kind === 'partidos' && w.s.week - x.week >= 6 && w.s.week - x.week < 14); if (!ps.length || !prev.length) return null; const now = ps[0].values[p.id] ?? 0; const before = prev[0].values[p.id] ?? 0; if (Math.abs(now - before) < 2) return null; return { delta: Math.round((now - before) * 10) / 10, pollster: ps[0].pollster }; },
+    title: (w, c) => `Una encuesta ${Number(c.delta) > 0 ? 'favorece' : 'golpea'} a ${party(w)!.short}`,
+    text: (w, c) => `La última encuesta (${c.pollster}, publicación simulada) muestra a ${party(w)!.short} ${Number(c.delta) > 0 ? 'subiendo' : 'cayendo'} ${Math.abs(Number(c.delta))} puntos. En la militancia cambia el ánimo.`,
+    options: [
+      o('aprovechar', 'Usarla para pedir más espacio a tu sector', (w, c) => { if (Number(c.delta) < 0) { rep(w, 'confianzaPartido', -1); return 'Pedir espacio cuando el partido cae no cae bien.'; } rep(w, 'confianzaPartido', 1); return 'Tu sector gana algo de aire.'; }),
+      o('autocritica', 'Pedir una reflexión interna', (w, c) => { if (Number(c.delta) < 0) { rep(w, 'credibilidad', 1); return 'Tu llamado a la autocrítica conecta con las bases.'; } return 'Nadie quiere autocrítica cuando las cosas van bien.'; }),
+      o('nada', 'No comentar encuestas', () => 'Te mantienes en el trabajo territorial.'),
+    ] }),
+  def({ id: 'e_debate', cat: 'campana', tier: 'relevante', priority: 6, cooldown: 40, p: 0.5, tags: ['debate'],
+    require: (w) => { if (!w.s.player.candidacies.length || !electionSoon(w, 10)) return null; const r = Object.values(w.s.characters).find((c) => c.status === 'activo' && !c.isPlayer && !c.realId && c.regionId === me(w).regionId && c.partyId !== me(w).partyId && c.offices.length); return r ? { rival: r.id } : null; },
+    title: () => 'Debate en la radio regional',
+    text: (w, c) => `Una radio regional organiza un debate entre candidaturas. Estarás frente a ${name(w, c.rival)}, con más experiencia en medios.`,
+    options: [
+      o('preparar', 'Prepararte a fondo con tu equipo', (w, c) => { w.s.player.actionPoints = Math.max(0, w.s.player.actionPoints - 1); const q = skill(w, 'oratoria', 'tecnico') + 0.1; if (q > 0.5) { regRep(w, me(w).regionId, 4); rep(w, 'popularidad', 2); if (w.s.player.campaign) w.s.player.campaign.intensity = clamp(w.s.player.campaign.intensity + 5, 0, 100); return `Ganas el debate a juicio de la prensa local. ${firstN(w, c.rival)} queda a la defensiva.`; } return 'Debate parejo.'; }),
+      o('improvisar', 'Ir sin preparación especial', (w, c) => { const q = skill(w, 'oratoria', 'carisma'); if (q > 0.6) { regRep(w, me(w).regionId, 3); return 'Tu naturalidad funciona.'; } rep(w, 'credibilidad', -2); return `${firstN(w, c.rival)} te deja sin respuesta en un dato.`; }),
+      o('no', 'Excusarte', (w) => { rep(w, 'credibilidad', -1); return 'Tu silla vacía es comentada en la radio.'; }),
+    ] }),
+  def({ id: 'e_coalicion_lista', cat: 'campana', tier: 'relevante', priority: 7, cooldown: 80, p: 0.4, tags: ['lista_pacto'],
+    require: (w) => { if (!electionSoon(w, 30, ['diputados', 'concejales', 'alcaldes'])) return null; const co = Object.values(w.s.coalitions).find((c) => c.active && c.members.includes(me(w).partyId ?? '') && c.members.length > 1); if (!co) return null; const other = co.members.find((m) => m !== me(w).partyId)!; return { co: co.id, other }; },
+    title: (w) => `El pacto discute la lista en ${region(me(w).regionId)}`,
+    text: (w, c) => `${w.s.parties[String(c.other)].short} pide que tu partido le ceda un cupo en tu zona. La directiva regional consulta a dirigentes territoriales.`,
+    options: [
+      o('defender', 'Defender el cupo propio', (w, c) => { rep(w, 'confianzaPartido', 2); const k = [String(c.other), me(w).partyId!].sort().join('|'); w.s.partyRelations[k] = clamp((w.s.partyRelations[k] ?? 0) - 2, -100, 100); return 'Tu postura fortalece a quienes no quieren ceder.'; }),
+      o('ceder', 'Aceptar la cesión por la unidad del pacto', (w, c) => { const co = w.s.coalitions[String(c.co)]; co.cohesion = clamp(co.cohesion + 2, 0, 100); rep(w, 'confianzaPartido', -1); return 'Aceptas la cesión: el pacto se ordena, tu base local reclama.'; }),
+      o('compensar', 'Pedir compensación en otra comuna', (w) => { const ok = skill(w, 'negociacion') > 0.5; if (ok) rep(w, 'confianzaPartido', 2); return ok ? 'Se acuerda una compensación: tu partido no pierde terreno neto.' : 'La propuesta se diluye en la negociación.'; }),
+    ] }),
+  def({ id: 'e_critica_programatica', cat: 'campana', tier: 'relevante', priority: 6, cooldown: 30, p: 0.35, tags: ['critica'],
+    require: (w) => { if (!w.s.player.candidacies.length) return null; const r = Object.values(w.s.characters).find((c) => c.status === 'activo' && !c.realId && !c.isPlayer && c.regionId === me(w).regionId && c.partyId !== me(w).partyId && c.offices.length); return r ? { npc: r.id, topic: area(me(w).specialty) } : null; },
+    title: (w, c) => `${name(w, c.npc)} critica tu programa`,
+    text: (w, c) => `${name(w, c.npc)} afirma en un foro que tu propuesta sobre ${c.topic} «no tiene cómo financiarse».`,
+    options: [
+      o('datos', 'Responder con el costeo', (w) => { const q = skill(w, 'tecnico'); if (q > 0.5) { rep(w, 'credibilidad', 2); rep(w, 'prestigioTecnico', 1); return 'Tu respuesta con cifras cierra la discusión a tu favor.'; } rep(w, 'credibilidad', -1); return 'Tu costeo tiene supuestos discutibles; la crítica persiste.'; }),
+      o('ajustar', 'Ajustar la propuesta', (w) => { rep(w, 'prestigioTecnico', 1); return 'Ajustas la propuesta: menos ambiciosa, más creíble.'; }),
+      o('contraatacar', 'Contraatacar su historial', (w, c) => { rel(w, c.npc, { rivalry: 10 }); rep(w, 'popularidad', 0.5); return 'El intercambio se vuelve personal: ganas atención, no argumentos.'; }),
+    ] }),
+  def({ id: 'e_pierde_colaboradores', cat: 'campana', tier: 'cotidiano', priority: 5, cooldown: 40, p: 0.25, tags: ['campana_propia'],
+    require: (w) => { if (!w.s.player.campaign) return null; const vol = pickMate(w) ?? null; return { npc: vol?.id ?? '' }; },
+    title: () => 'Tu campaña pierde voluntarios',
+    text: (w, c) => `${c.npc ? `${name(w, c.npc)} y otros voluntarios` : 'Varios voluntarios'} dejan el comando: dicen que no se les toma en cuenta y que la campaña está «encerrada en una oficina».`,
+    options: [
+      o('reunir', 'Reunirte con ellos', (w, c) => { if (c.npc) rel(w, c.npc, { trust: 5 }); org(w, 1); return 'Escuchas los reclamos y cambias la coordinación: la mayoría vuelve.'; }),
+      o('reemplazar', 'Reemplazarlos con equipo pagado', (w) => { funds(w, -4); return 'Contratas equipo: la campaña sigue, pero pierde mística.'; }, (w) => w.s.player.personalFunds >= 4),
+      o('seguir', 'Seguir adelante', (w) => { if (w.s.player.campaign) w.s.player.campaign.intensity = clamp(w.s.player.campaign.intensity - 4, 0, 100); return 'La campaña pierde fuerza en el terreno.'; }),
+    ] }),
+  def({ id: 'e_independiente', cat: 'campana', tier: 'cotidiano', priority: 4, cooldown: 60, p: 0.2, tags: ['independiente'],
+    require: (w) => { if (!electionSoon(w, 30)) return null; const i = Object.values(w.s.characters).find((c) => c.status === 'activo' && !c.realId && !c.partyId && c.regionId === me(w).regionId && c.rep.reconocimiento > 8); return i ? { npc: i.id } : null; },
+    title: (w, c) => `${name(w, c.npc)}, independiente, busca respaldo`,
+    text: (w, c) => `${name(w, c.npc)} reúne firmas para una candidatura independiente y busca respaldos de dirigentes con base. Tu partido no lo verá bien.`,
+    options: [
+      o('respaldar', 'Respaldarle', (w, c) => { rel(w, c.npc, { trust: 10, cooperation: 6 }); rep(w, 'confianzaPartido', -3); return 'Le das tu respaldo: ganas un aliado fuera del partido.'; }),
+      o('privado', 'Apoyar en privado, sin firmar', (w, c) => { rel(w, c.npc, { trust: 4 }); return 'Le ayudas con contactos, sin exponerte.'; }),
+      o('no', 'No involucrarte', () => 'Te mantienes en tu partido.'),
+    ] }),
+];
+
+export const INSTITUCIONAL: EventDef[] = [
+  def({ id: 'f_parlamentario_colabora', cat: 'institucional', tier: 'relevante', priority: 6, cooldown: 50, p: 0.25, tags: ['parlamento'],
+    require: (w) => { const l = myLegs(w).find((c) => c.regionId === me(w).regionId) ?? myLegs(w)[0]; if (!l || (me(w).rep.prestigioTecnico < 15 && terr(w) < 15)) return null; return { npc: l.id }; },
+    title: (w, c) => `${name(w, c.npc)} te pide colaboración`,
+    text: (w, c) => `${has(ch(w, c.npc), 'senador') ? 'El/la senador/a' : 'El/la diputado/a'} ${name(w, c.npc)} necesita ${me(w).rep.prestigioTecnico >= 15 ? 'apoyo técnico para unas indicaciones' : 'alguien que organice una semana distrital en tu comuna'}. ${ch(w, c.npc)?.realId ? '(Situación ficticia con una persona real: no reproduce hechos reales.)' : ''}`,
+    options: [
+      o('si', 'Aceptar', (w, c) => { rel(w, c.npc, { cooperation: 8, respect: 4 }); rep(w, 'relacionesParlamentarias', 3); if (me(w).rep.prestigioTecnico >= 15) rep(w, 'prestigioTecnico', 1.5); else land(w, home(w), 2); return 'Colaboras: abres una puerta en el Congreso.'; }),
+      o('condicion', 'Aceptar si te presenta en su bancada', (w, c) => { const ok = disp(w, c.npc) + w.rng.normal(0, 10) > 10; rel(w, c.npc, ok ? { cooperation: 6 } : { trust: -2 }, 'menor'); if (ok) rep(w, 'relacionesParlamentarias', 5); return ok ? 'Te presenta a su bancada.' : 'No le gusta que pongas condiciones.'; }),
+      o('no', 'Declinar', () => 'Declinas.'),
+    ] }),
+  def({ id: 'f_bancada_dividida', cat: 'institucional', tier: 'relevante', priority: 6, cooldown: 60, p: 0.2, tags: ['bancada'],
+    require: (w) => { const legs = myLegs(w, false); if (legs.length < 3) return null; const b = openBill(w, (x) => { const st = legs.map((l) => ideoDistance(l.ideology, x.position)); return Math.max(...st) - Math.min(...st) > 0.2; }); return b ? { bill: b.id, title: b.title.replace(/^Mensaje: /, '') } : null; },
+    title: (w) => `La bancada de ${party(w)?.short ?? 'tu partido'} se divide`,
+    text: (w, c) => `El proyecto «${c.title}» divide a la bancada. ${isLeg(me(w)) ? 'Tu voto será observado.' : 'Desde los territorios, la directiva pide opiniones a sus dirigentes.'}`,
+    options: [
+      o('favor', 'Pronunciarte a favor', (w, c) => { w.s.dialogue!.positions.push({ week: w.s.week, topic: `proyecto:${c.bill}`, stance: 1, source: 'declaracion' }); startArc(w, 'division_bancada', { bill: String(c.bill), side: 'favor' }); return 'Tu postura queda registrada.'; }),
+      o('contra', 'Pronunciarte en contra', (w, c) => { w.s.dialogue!.positions.push({ week: w.s.week, topic: `proyecto:${c.bill}`, stance: -1, source: 'declaracion' }); startArc(w, 'division_bancada', { bill: String(c.bill), side: 'contra' }); return 'Tu postura queda registrada.'; }),
+      o('unidad', 'Pedir una postura única de bancada', (w, c) => { cohesion(w, 1); rep(w, 'confianzaPartido', 1.5); startArc(w, 'division_bancada', { bill: String(c.bill), side: 'unidad' }); return 'Llamas a la unidad.'; }),
+    ] }),
+  def({ id: 'f_iniciativa_legislativa', cat: 'institucional', tier: 'cotidiano', priority: 4, cooldown: 30, p: 0.3, tags: ['proyecto'],
+    require: (w) => { const b = w.s.bills.find((x) => x.closedWeek === undefined && x.area === me(w).specialty && w.s.week - x.submittedWeek < 3); return b ? { bill: b.id, title: b.title.replace(/^Mensaje: /, '') } : null; },
+    title: (_w, c) => `Ingresa un proyecto en tu área: «${c.title}»`,
+    text: (_w, c) => `Ingresó «${c.title}», en el área en que te has especializado. Tu opinión puede tener eco.`,
+    options: [
+      o('apoyar', 'Apoyarlo públicamente', (w, c) => { w.s.dialogue!.positions.push({ week: w.s.week, topic: `proyecto:${c.bill}`, stance: 1, source: 'declaracion' }); rep(w, 'prestigioTecnico', 1); return 'Tu apoyo es citado por sus autores.'; }),
+      o('criticar', 'Criticar sus vacíos', (w, c) => { w.s.dialogue!.positions.push({ week: w.s.week, topic: `proyecto:${c.bill}`, stance: -1, source: 'declaracion' }); rep(w, 'prestigioTecnico', 1.5); return 'Tu crítica técnica se discute en la comisión.'; }),
+      o('indicaciones', 'Redactar indicaciones', (w, c) => { const b = w.s.bills.find((x) => x.id === c.bill); if (b) b.moderation = clamp(b.moderation + 0.05, 0, 1); rep(w, 'relacionesParlamentarias', 2); return 'Tus indicaciones se presentan en comisión.'; }, (w) => isLeg(me(w))),
+      o('foro', 'Organizar un foro con especialistas', (w) => { org(w, 1); rep(w, 'prestigioTecnico', 1); return 'El foro reúne a especialistas y dirigentes.'; }),
+    ] }),
+  def({ id: 'f_comision_especialistas', cat: 'institucional', tier: 'relevante', priority: 5, cooldown: 60, p: 0.35, tags: ['comision'],
+    require: (w) => { if (me(w).rep.prestigioTecnico < 30) return null; const b = openBill(w, (x) => x.area === me(w).specialty); return b ? { bill: b.id, title: b.title.replace(/^Mensaje: /, '') } : null; },
+    title: () => 'Una comisión te invita a exponer',
+    text: (_w, c) => `La comisión que estudia «${c.title}» te invita a exponer como especialista. Habrá parlamentarios de todos los sectores.`,
+    options: [
+      o('exponer', 'Exponer con un informe propio', (w) => { const q = skill(w, 'tecnico', 'oratoria'); if (q > 0.5) { rep(w, 'prestigioTecnico', 3); rep(w, 'relacionesParlamentarias', 3); return 'Tu exposición queda en el informe de la comisión.'; } rep(w, 'prestigioTecnico', -1); return 'Un parlamentario te deja en evidencia con una pregunta.'; }),
+      o('partido', 'Exponer la postura de tu partido', (w) => { rep(w, 'confianzaPartido', 2); rep(w, 'prestigioTecnico', 1); return 'Representas bien a tu partido.'; }, (w) => militant(w)),
+      o('no', 'Declinar', () => 'Declinas la invitación.'),
+    ] }),
+  def({ id: 'f_ministerio_reforma', cat: 'institucional', tier: 'relevante', priority: 6, cooldown: 80, p: 0.15, tags: ['gobierno'],
+    require: (w) => { const c = me(w); const coal = w.s.government.coalitionId ? w.s.coalitions[w.s.government.coalitionId] : null; if (!c.partyId || !coal?.members.includes(c.partyId) || c.rep.prestigioTecnico < 20) return null; const m = w.s.government.cabinet.find((x) => x.ministerId && w.s.characters[x.ministerId]?.status === 'activo' && !w.s.characters[x.ministerId]?.realId); return m ? { min: m.ministryId, npc: m.ministerId! } : null; },
+    title: () => 'Un ministerio prepara una reforma y pide aportes',
+    text: (w, c) => `El equipo del ministerio (${name(w, c.npc)}) consulta a figuras técnicas de los partidos de gobierno. Es una consulta simulada: el juego no atribuye posturas reales a la autoridad.`,
+    options: [
+      o('aportar', 'Enviar una propuesta técnica', (w) => { rep(w, 'prestigioTecnico', 2); P(w).counts.gob_contacto = (P(w).counts.gob_contacto ?? 0) + 1; return 'Tu propuesta llega al equipo ministerial: quedas en su radar.'; }),
+      o('critica', 'Advertir los riesgos políticos', (w) => { rep(w, 'credibilidad', 1); return 'Tu advertencia se registra.'; }),
+      o('no', 'No participar', () => 'No participas.'),
+    ] }),
+  def({ id: 'f_implementacion', cat: 'institucional', tier: 'cotidiano', priority: 4, cooldown: 60, p: 0.2, tags: ['implementacion'],
+    require: (w) => { const pol = w.s.government.policies.find((p) => p.phase === 'implementacion'); return pol ? { pol: pol.defId, cut: home(w) } : null; },
+    title: (_w, c) => `Problemas para implementar un programa en ${comuna(c.cut)}`,
+    text: (_w, c) => `Un programa nacional en implementación llega mal a ${comuna(c.cut)}: faltan funcionarios y los beneficiarios no saben cómo postular.`,
+    options: [
+      o('ayudar', 'Organizar orientación a vecinos', (w, c) => { land(w, c.cut, 2.5); org(w, 1); return 'Tu operativo de orientación ayuda a cientos de familias.'; }),
+      o('denunciar', 'Denunciar la mala implementación', (w) => { rep(w, 'reconocimiento', 1); return 'Tu denuncia aparece en la prensa regional.'; }),
+      o('nada', 'No involucrarte', () => 'El problema sigue.'),
+    ] }),
+  def({ id: 'f_presupuesto', cat: 'institucional', tier: 'relevante', priority: 6, cooldown: 45, p: 0.5, tags: ['presupuesto'],
+    require: (w) => { const wk = w.s.week % 52; if (wk < 38 || wk > 47) return null; if (!has(me(w), 'diputado', 'senador', 'alcalde', 'concejal', 'gobernador', 'dirigente_territorial')) return null; return { reg: me(w).regionId }; },
+    title: (_w, c) => `Ley de Presupuestos: recursos para ${region(String(c.reg))}`,
+    text: () => 'En la discusión presupuestaria se recortan recursos de inversión regional. Alcaldes, consejeros y parlamentarios de la región se coordinan para revertirlo.',
+    options: [
+      o('pelear', 'Encabezar la gestión regional', (w, c) => { const ok = chance(w, 0.35 + (isLeg(me(w)) ? 0.3 : 0)); regRep(w, String(c.reg), ok ? 5 : 2); if (ok) news(w, 'regiones', `Se reponen recursos para ${region(String(c.reg))}`, 'Tras una gestión de autoridades regionales.', 2, [me(w).id]); return ok ? 'Se reponen parte de los recursos: tu gestión se reconoce.' : 'No se reponen, pero quedas como quien dio la pelea.'; }),
+      o('apoyar', 'Sumarte a la coordinación', (w, c) => { regRep(w, String(c.reg), 1.5); return 'Te sumas a la coordinación regional.'; }),
+      o('gobierno', 'Respaldar el ajuste por responsabilidad fiscal', (w) => { rep(w, 'prestigioTecnico', 1); rep(w, 'popularidad', -1); return 'Tu postura fiscal no es popular en la región.'; }),
+    ] }),
+  def({ id: 'f_autoridad_coordinacion', cat: 'institucional', tier: 'cotidiano', priority: 4, cooldown: 40, p: 0.25, tags: ['coordinacion'],
+    require: (w) => { if (!has(me(w), 'alcalde', 'concejal', 'diputado', 'senador')) return null; const a = Object.values(w.s.characters).find((c) => c.status === 'activo' && !c.isPlayer && !c.realId && c.regionId === me(w).regionId && has(c, 'alcalde', 'gobernador', 'seremi')); return a ? { npc: a.id } : null; },
+    title: (w, c) => `${name(w, c.npc)} propone trabajar en conjunto`,
+    text: (w, c) => `${name(w, c.npc)} propone coordinar acciones sobre ${area(me(w).specialty)} en la región. ${ch(w, c.npc)?.partyId !== me(w).partyId ? 'Es de otro sector político.' : ''}`,
+    options: [
+      o('si', 'Aceptar', (w, c) => { rel(w, c.npc, { cooperation: 6 }); land(w, home(w), 1.5); return 'Acuerdan un plan de trabajo.'; }),
+      o('agenda', 'Aceptar con tu propia agenda', (w, c) => { rel(w, c.npc, { cooperation: 3, respect: 2 }); rep(w, 'credibilidad', 1); return 'Acuerdan con prioridades tuyas incluidas.'; }),
+      o('no', 'Declinar por diferencias políticas', (w, c) => { rel(w, c.npc, { trust: -3 }, 'menor'); return 'Declinas.'; }),
+    ] }),
+  def({ id: 'f_coalicion_votacion', cat: 'institucional', tier: 'relevante', priority: 7, cooldown: 30, p: 0.4, tags: ['votacion'],
+    require: (w) => { if (!isLeg(me(w))) return null; const b = openBill(w, (x) => x.stage === 'sala_origen' || x.stage === 'sala_revisora'); return b ? { bill: b.id, title: b.title.replace(/^Mensaje: /, '') } : null; },
+    title: (_w, c) => `La coalición ordena la votación de «${c.title}»`,
+    text: (w) => `La jefatura de bancada pide votar en bloque. ${leaderOf(w) ? `${name(w, leaderOf(w)!.id)} llamó personalmente.` : ''}`,
+    options: [
+      o('alinear', 'Votar con la coalición', (w, c) => { const b = w.s.bills.find((x) => x.id === c.bill); if (b) b.playerVote = 'yes'; rep(w, 'confianzaPartido', 2); return 'Votas en bloque.'; }),
+      o('negociar', 'Condicionar tu voto a un cambio', (w, c) => { const b = w.s.bills.find((x) => x.id === c.bill); if (b) b.moderation = clamp(b.moderation + 0.06, 0, 1); rep(w, 'relacionesParlamentarias', 2); return 'Consigues un cambio menor a cambio de tu voto.'; }),
+      o('contra', 'Votar en contra', (w, c) => { const b = w.s.bills.find((x) => x.id === c.bill); if (b) b.playerVote = 'no'; rep(w, 'confianzaPartido', -4); rep(w, 'credibilidad', 1); return 'Votas en contra: la jefatura lo registra.'; }),
+    ] }),
+  def({ id: 'f_reforma_tensiones', cat: 'institucional', tier: 'relevante', priority: 5, cooldown: 70, p: 0.15, tags: ['reforma'],
+    require: (w) => { const p = party(w); if (!p) return null; const b = openBill(w, (x) => x.intensity > 0.6 && ideoDistance(p.ideology, x.position) > 0.25 && ideoDistance(p.ideology, x.position) < 0.45); return b ? { bill: b.id, title: b.title.replace(/^Mensaje: /, '') } : null; },
+    title: (_w, c) => `«${c.title}» tensiona a tu partido`,
+    text: (w, c) => `La reforma «${c.title}» divide a ${party(w)!.short}: un sector la ve como un avance; otro, como una renuncia a principios.`,
+    options: [
+      o('favor', 'Apoyar la reforma', (w, c) => { w.s.dialogue!.positions.push({ week: w.s.week, topic: `proyecto:${c.bill}`, stance: 1, source: 'consejo' }); startArc(w, 'debate_reforma', { bill: String(c.bill), side: 'favor' }); return 'Tu postura te alinea con el sector reformista.'; }),
+      o('contra', 'Oponerte', (w, c) => { w.s.dialogue!.positions.push({ week: w.s.week, topic: `proyecto:${c.bill}`, stance: -1, source: 'consejo' }); startArc(w, 'debate_reforma', { bill: String(c.bill), side: 'contra' }); return 'Tu postura te alinea con el sector crítico.'; }),
+      o('mediar', 'Proponer indicaciones de consenso', (w, c) => { cohesion(w, 1); startArc(w, 'debate_reforma', { bill: String(c.bill), side: 'mediar' }); return 'Buscas una fórmula intermedia.'; }),
+    ] }),
+];

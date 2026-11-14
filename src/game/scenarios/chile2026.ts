@@ -29,6 +29,8 @@ import { addHistory, ideoDistance, pairKey, strongholdFactor, zeroIdeology } fro
 import { initPolling } from '../polling';
 import { initMedia } from '../media';
 import { emptyDialogue } from '../dialogue';
+import { emptyPolitics } from '../politics/ops';
+import { refreshOffers } from '../politics/contextual';
 import { weeklyPlayer } from '../systems/player';
 import { addTerritory, bio, emptyCareer, first, homeCut } from '../career/capital';
 import { generateAgenda } from '../career/agendaWeek';
@@ -297,9 +299,11 @@ export function createChile2026(cfg: NewGameConfig): GameState {
 
   initMedia(s, rng);
   s.dialogue = emptyDialogue();
+  s.politics = emptyPolitics();
   // Jugador
   createPlayer(s, rng, cfg, diff.startFunds);
   generateAgenda(s, rng);
+  refreshOffers({ s, rng }); // acciones concretas desde la primera semana
   updateIntention(s);
   initPolling(s, rng);
   weeklyPlayer(s);

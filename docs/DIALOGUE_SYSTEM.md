@@ -63,7 +63,7 @@ Las que exigen un cargo (`requiresOffice`) ni siquiera se ofrecen a quien no lo 
 
 ## Ejemplo funcional (§19): partida real, semilla 7, Chillán (Ñuble)
 
-En la semana 21 se abre la elección de la directiva regional del partido. Eduardo Riquelme Díaz, personaje **ficticio** y cabeza de la lista A, invita al jugador. Las transcripciones siguientes salen literalmente de `tests/dialogue.test.ts` y de la ejecución exploratoria.
+En la semana 21 se abre la elección de la directiva regional del partido. Eduardo Riquelme Díaz, personaje **ficticio** y cabeza de la lista A, invita al jugador. Las transcripciones siguientes son de una ejecución de referencia. La partida concreta (quién invita, qué responde) cambia entre versiones del juego porque el mundo simulado evoluciona; las pruebas verifican las propiedades, no un texto fijo.
 
 **Rama A: interés y aceptación.**
 ```
