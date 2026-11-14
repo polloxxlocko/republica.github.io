@@ -2,7 +2,7 @@
  * Instituciones: ministerios reales (nombres documentados), medios y encuestadoras FICTICIOS.
  * Los medios y encuestadoras son inventados a propósito para no atribuir noticias a medios reales.
  */
-import type { MediaOutlet, Ministry } from '../models/types';
+import type { Ministry } from '../models/types';
 
 export const MINISTRIES: Ministry[] = [
   { id: 'interior', name: 'Interior', area: 'probidad', weight: 1.0 },
@@ -33,13 +33,4 @@ export const MINISTRIES: Ministry[] = [
 ];
 export const MINISTRY_BY_ID = Object.fromEntries(MINISTRIES.map((m) => [m.id, m])) as Record<string, Ministry>;
 
-/** Medios ficticios. lean: -1 izquierda .. +1 derecha (línea editorial simulada). */
-export const MEDIA: MediaOutlet[] = [
-  { id: 'brujula', name: 'Diario La Brújula', kind: 'diario', lean: 0.5, reach: 0.8 },
-  { id: 'observador', name: 'El Observador Austral', kind: 'diario', lean: 0, reach: 0.7 },
-  { id: 'portal', name: 'Portal Ciudadano', kind: 'digital', lean: -0.55, reach: 0.6 },
-  { id: 'andina', name: 'Radio Andina', kind: 'radio', lean: -0.1, reach: 0.75 },
-  { id: 'hemiciclo', name: 'Revista Hemiciclo', kind: 'revista', lean: 0.1, reach: 0.3 },
-  { id: 'canalsur', name: 'Señal Sur TV', kind: 'tv', lean: 0.2, reach: 0.9 },
-];
 

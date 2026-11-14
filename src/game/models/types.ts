@@ -547,7 +547,6 @@ export interface Opinion {
   areaSatisfaction: Partial<Record<PolicyArea, number>>;
 }
 
-export interface MediaOutlet { id: string; name: string; kind: 'diario' | 'radio' | 'tv' | 'digital' | 'revista'; lean: number; reach: number; }
 
 export interface NewsItem {
   id: string;
@@ -558,6 +557,8 @@ export interface NewsItem {
   category: 'elecciones' | 'congreso' | 'gobierno' | 'economia' | 'partidos' | 'coaliciones' | 'crisis' | 'regiones' | 'jugador' | 'encuestas';
   importance: number; // 1..5
   tone: -1 | 0 | 1;
+  /** hecho del ecosistema de medios asociado (cobertura múltiple) */
+  eventId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -847,6 +848,8 @@ export interface GameState {
   polls: Poll[];
   /** Sistema de encuestas (publicaciones simuladas, parámetros ocultos, estudios privados) */
   polling?: import('../polling/types').PollingState;
+  /** Ecosistema de medios (cobertura simulada, periodistas ficticios, entrevistas) */
+  media?: import('../media/types').MediaState;
   news: NewsItem[];
   history: HistoryEntry[];
   pending: PendingDecision[];

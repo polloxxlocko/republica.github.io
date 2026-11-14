@@ -85,17 +85,19 @@ export function initPolling(s: GameState, rng: Rng): void {
 }
 
 /**
- * Retención acotada: dos años de publicaciones; las anteriores solo si alguna evaluación las cita.
+ * Retención acotada: 18 meses de publicaciones (las evaluaciones conservan sus propias cifras).
  * Tras 8 semanas se descartan detalles secundarios (submuestras, figuras ajenas al jugador) para
  * mantener la partida liviana; las series del comparador se conservan.
  */
 function compactSurveys(s: GameState): void {
   const pol = s.polling!;
-  const cited = new Set(pol.evaluations.flatMap((e) => e.rows.map((r) => r.surveyId)));
-  pol.surveys = pol.surveys.filter((sv) => s.week - sv.publishedWeek <= 104 || cited.has(sv.id));
+  // las evaluaciones guardan sus propias cifras (encuesta vs. resultado), no necesitan la edición completa
+  pol.surveys = pol.surveys.filter((sv) => s.week - sv.publishedWeek <= 78);
   const me = s.player.characterId;
   for (const sv of pol.surveys) {
     if (s.week - sv.publishedWeek !== 8) continue;
-    sv.questions = sv.questions.filter((q) => q.topic !== 'figuras' || q.subject === me).map((q) => ({ ...q, territorial: undefined, effN: Math.round(q.effN) }));
+    // tras 8 semanas solo quedan las series del comparador (y la evaluación del jugador)
+    const KEEP = new Set(['aprobacion', 'evaluacion_gobierno', 'partidos', 'presidencial_lista', 'presidencial_espontanea', 'segunda_vuelta', 'economia', 'seguridad', 'expectativas']);
+    sv.questions = sv.questions.filter((q) => KEEP.has(q.topic) || (q.topic === 'figuras' && q.subject === me)).map((q) => ({ ...q, territorial: undefined, effN: Math.round(q.effN) }));
   }
 }

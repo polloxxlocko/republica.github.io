@@ -2,7 +2,7 @@
 
 Simulador político chileno para navegador. Es la historia de **una carrera política individual** dentro de un sistema vivo. Empiezas a los 18 años o más, sin cargo, como militante de base, independiente o dirigente comunitario/a. Construyes capital político, compites por nominaciones dentro de tu partido, aprovechas o rechazas oportunidades, cumples o rompes compromisos y, si las cosas se dan, llegas a cargos de elección o de designación. La Presidencia es una posibilidad excepcional, no una meta garantizada. Partidos, parlamentarios, gobierno y electorado actúan por su cuenta.
 
-> **Aviso.** Es una **simulación ficticia e independiente**, sin afiliación a ningún partido, institución ni medio de comunicación. **Todos los personajes son ficticios.** También son simulados la composición inicial del Congreso, el gobierno, las autoridades, los resultados de las encuestas (las encuestadoras reales solo se usan como referencia nombrada) y los medios. El registro de partidos fue verificado contra SERVEL (consulta del 06-11-2026). Los atributos de los partidos (ideología, militancia, organización) son **estimaciones de balance**, no mediciones oficiales. Ver [POLITICAL_DATA.md](POLITICAL_DATA.md).
+> **Aviso.** Es una **simulación ficticia e independiente**, sin afiliación a ningún partido, institución ni medio de comunicación. **Todos los personajes son ficticios.** También son simulados la composición inicial del Congreso, el gobierno, las autoridades, los resultados de las encuestas (las encuestadoras reales solo se usan como referencia nombrada) y la cobertura de los medios (los medios reales aparecen con perfiles documentados, pero sus titulares y entrevistas son ficticios). El registro de partidos fue verificado contra SERVEL (consulta del 06-11-2026). Los atributos de los partidos (ideología, militancia, organización) son **estimaciones de balance**, no mediciones oficiales. Ver [POLITICAL_DATA.md](POLITICAL_DATA.md).
 
 ## Qué incluye (estado actual)
 
@@ -18,6 +18,7 @@ Simulador político chileno para navegador. Es la historia de **una carrera pol�
 | Mapa electoral comunal (geometría oficial del MOP) con capas, comparación entre elecciones, estrategia territorial y explicaciones | ✅ |
 | Elecciones: presidencial con 2ª vuelta, primarias, diputados (28 distritos, D'Hondt, pactos y subpactos), Senado (renovación por mitades), alcaldes, concejales, gobernadores con 2ª vuelta | ✅ |
 | **Sistema de encuestas**: Plaza Pública Cadem, Agenda Criteria, Pulso Ciudadano, Data Influye y Encuesta CEP como referencias documentadas (resultados **ficticios**), motor que entrevista al electorado sintético según modalidad y ponderación, calendarios propios, veda legal, comparador, promedio ponderado, estudios privados, reacciones de los actores y evaluación tras cada elección. Ver [docs/POLLING.md](docs/POLLING.md) | ✅ |
+| **Ecosistema de medios**: 19 medios nacionales y 12 regionales reales con perfiles documentados (percepción ideológica, credibilidad y consumo según PUCV 2025–2026; propiedad según Reuters 2026), cobertura autónoma con encuadres y tonos distintos, difusión local → nacional, redes con usuarios sintéticos, periodistas ficticios con memoria y entrevistas con repreguntas. Toda cobertura es ficticia. Ver [docs/MEDIA.md](docs/MEDIA.md) | ✅ |
 | Noche electoral con escrutinio progresivo | ✅ |
 | Congreso: 205 escaños individuales, hemiciclo interactivo, tramitación completa (comisiones, salas, tercer trámite, comisión mixta, veto, insistencia, TC), quórums, urgencias, negociación con partidos y parlamentarios | ✅ |
 | Gobierno: gabinete de 25 ministerios, cuoteo, 24 políticas con ciclo anuncio→…→evaluación, presupuesto anual (art. 67 CPR), capacidad estatal, Contraloría | ✅ |
@@ -102,5 +103,6 @@ Los datos de referencia están en `src/game/data/`. Cada conjunto declara fuente
 - [SIMULATION_RULES.md](SIMULATION_RULES.md): fórmulas, parámetros y simplificaciones institucionales.
 - [DEPLOYMENT.md](DEPLOYMENT.md): despliegue en GitHub Pages.
 - [TESTING.md](TESTING.md): pruebas y balance.
+- [docs/MEDIA.md](docs/MEDIA.md): ecosistema de medios, fuentes de calibración y reglas de cobertura.
 - [docs/POLLING.md](docs/POLLING.md): sistema de encuestas (encuestadoras reales como referencia, resultados ficticios, motor muestral, promedio, veda y evaluación).
 - [docs/ART_DIRECTION.md](docs/ART_DIRECTION.md), [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md), [docs/UI_SCREEN_SPECIFICATIONS.md](docs/UI_SCREEN_SPECIFICATIONS.md), [docs/PHOTO_SOURCES.md](docs/PHOTO_SOURCES.md), [docs/ASSET_LICENSES.md](docs/ASSET_LICENSES.md), [docs/CHARACTER_ART_STYLE.md](docs/CHARACTER_ART_STYLE.md), [docs/UI_PROGRESS.md](docs/UI_PROGRESS.md): dirección de arte «Archivo de Poder».

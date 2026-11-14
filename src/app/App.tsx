@@ -12,7 +12,7 @@ import { Elections } from '../screens/Elections';
 import { Career } from '../screens/Career';
 import { Government } from '../screens/Government';
 import { EconomyScreen } from '../screens/EconomyScreen';
-import { NewsScreen } from '../screens/NewsScreen';
+import { MediaScreen } from '../screens/MediaScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { GameMenu } from '../screens/GameMenu';
 import { ElectionNight } from '../screens/ElectionNight';
@@ -168,7 +168,7 @@ export default function App() {
     case 'elecciones': body = <Elections />; break;
     case 'gobierno': body = <Government />; break;
     case 'economia': body = <EconomyScreen />; break;
-    case 'noticias': body = <NewsScreen />; break;
+    case 'noticias': body = <MediaScreen />; break;
     case 'historial': body = <HistoryScreen />; break;
     case 'partida': body = <GameMenu />; break;
     case 'noche': body = <ElectionNight />; break;

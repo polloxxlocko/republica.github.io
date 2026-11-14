@@ -31,6 +31,7 @@ import { resolveDecision } from './events';
 import { COMUNA_BY_CUT } from '../territory/data';
 import { buildOrganization, investCampaign, targetComunas, targetLabel, type TerritoryTarget } from '../territory/dynamics';
 import { orderPrivate, privateBlocked } from '../polling/private';
+import { acceptInvite, answerInterview, declineInvite, inviteBlocked } from '../media/journalists';
 
 export type PlayerAction =
   | { type: 'entrevista'; dim?: Dim; side?: -1 | 1 }
@@ -79,6 +80,9 @@ export type PlayerAction =
   | { type: 'retirar_proyecto'; billId: string }
   | { type: 'decision_ejecutivo'; billId: string; decision: 'promulgar' | 'vetar' }
   | { type: 'anunciar_politica'; policyId: string }
+  | { type: 'aceptar_entrevista'; inviteId: string }
+  | { type: 'rechazar_entrevista'; inviteId: string }
+  | { type: 'responder_entrevista'; inviteId: string; index: number; answer: 'datos' | 'linea' | 'propia' | 'evadir' }
   | { type: 'encargar_encuesta'; study: import('../polling/types').PrivateStudy; region?: RegionId; cut?: number; area?: PolicyArea }
   | { type: 'nombrar_ministro'; ministryId: string; charId: string }
   | { type: 'cadena_nacional' }
@@ -96,7 +100,7 @@ export const ACTION_COST: Record<PlayerAction['type'], number> = {
   atender_vecinos: 1, renunciar_cargo: 0, cambiar_jornada: 0, agenda: 0, despedir: 0, ...LEG_COST, retirar_candidatura: 0, configurar_campana: 0, actividad_campana: 1, contratar_equipo: 0,
   postular_interna: 1, organizar_faccion: 1, renunciar_partido: 0, unirse_partido: 1, fundar_partido: 2, proponer_alianza: 1,
   salir_coalicion: 0, disciplinar_bancada: 1, negociar_partido: 1, lobby: 1, urgencia: 0, retirar_proyecto: 0, decision_ejecutivo: 0,
-  anunciar_politica: 1, encargar_encuesta: 1, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
+  anunciar_politica: 1, encargar_encuesta: 1, aceptar_entrevista: 1, rechazar_entrevista: 0, responder_entrevista: 0, nombrar_ministro: 0, cadena_nacional: 1, gestion_local: 2, gestion_ministerial: 1, resolver_decision: 0, retirarse: 0,
   campana_territorial: 1, trabajo_territorial: 1,
 };
 
@@ -113,7 +117,7 @@ export const ACTION_LABELS: Record<PlayerAction['type'], string> = {
   organizar_faccion: 'Organizar tu sector interno', renunciar_partido: 'Renunciar al partido', unirse_partido: 'Afiliarse a un partido',
   fundar_partido: 'Fundar un partido', proponer_alianza: 'Proponer alianza', salir_coalicion: 'Salir de la coalición', disciplinar_bancada: 'Ordenar la bancada',
   negociar_partido: 'Negociar con un partido', lobby: 'Conversar con un parlamentario', urgencia: 'Asignar urgencia', retirar_proyecto: 'Retirar proyecto',
-  decision_ejecutivo: 'Promulgar o vetar', anunciar_politica: 'Anunciar política', encargar_encuesta: 'Encargar encuesta', nombrar_ministro: 'Nombrar ministro/a', cadena_nacional: 'Cadena nacional',
+  decision_ejecutivo: 'Promulgar o vetar', anunciar_politica: 'Anunciar política', encargar_encuesta: 'Encargar encuesta', aceptar_entrevista: 'Aceptar entrevista', rechazar_entrevista: 'Rechazar entrevista', responder_entrevista: 'Responder en entrevista', nombrar_ministro: 'Nombrar ministro/a', cadena_nacional: 'Cadena nacional',
   gestion_local: 'Gestión local', gestion_ministerial: 'Gestión ministerial', resolver_decision: 'Resolver decisión', retirarse: 'Retirarse de la política',
   campana_territorial: 'Invertir en campaña territorial', trabajo_territorial: 'Trabajo territorial (organización)',
 };
@@ -231,6 +235,9 @@ export function actionBlocked(s: GameState, a: PlayerAction): string | null {
       return targetComunas(a.target).length ? null : 'Territorio inválido';
     }
     case 'encargar_encuesta': return privateBlocked(s, a.study);
+    case 'aceptar_entrevista': return inviteBlocked(s, a.inviteId, 'aceptar');
+    case 'rechazar_entrevista': return inviteBlocked(s, a.inviteId, 'rechazar');
+    case 'responder_entrevista': { const inv = s.media?.invites.find((i) => i.id === a.inviteId); return !inv || inv.status !== 'aceptada' ? 'Entrevista no disponible' : inv.questions?.[a.index] && !inv.questions[a.index].answer ? null : 'Pregunta no disponible'; }
     case 'trabajo_territorial': return c.partyId ? (targetComunas(a.target).length ? null : 'Territorio inválido') : 'Necesitas militar en un partido';
     default: return null;
   }
@@ -240,7 +247,7 @@ function bump(c: Character, attr: keyof Character['attrs'], v = 0.4): void { c.a
 
 /** Aplica la acción (muta el estado clonado). Devuelve un mensaje para el jugador. */
 const REP_KEYS = ['popularidad', 'prestigioTecnico', 'confianzaPartido', 'credibilidad', 'reconocimiento'] as const;
-const NO_FATIGUE = new Set<PlayerAction['type']>(['agenda', 'despedir', 'responder_oportunidad', 'resolver_decision', 'voto_parlamentario', 'configurar_campana', 'retirar_candidatura', 'retirar_aspiracion', 'renunciar_cargo', 'retirarse', 'aspirar', 'firmas_independiente']);
+const NO_FATIGUE = new Set<PlayerAction['type']>(['agenda', 'despedir', 'responder_oportunidad', 'resolver_decision', 'voto_parlamentario', 'configurar_campana', 'retirar_candidatura', 'retirar_aspiracion', 'renunciar_cargo', 'retirarse', 'aspirar', 'firmas_independiente', 'responder_entrevista', 'rechazar_entrevista']);
 
 /** Factor de fatiga por repetir la misma acción (rendimientos decrecientes; se recupera ~20%/semana). */
 export function actionFatigue(s: GameState, type: PlayerAction['type']): number {
@@ -651,6 +658,9 @@ function applyActionInner(s: GameState, rng: Rng, a: PlayerAction): string {
       bump(c, 'redes', 0.3);
       return `Fortaleciste la organización de ${s.parties[c.partyId!].short} en ${targetLabel(a.target)}.`;
     }
+    case 'aceptar_entrevista': return acceptInvite(s, rng, a.inviteId);
+    case 'rechazar_entrevista': return declineInvite(s, a.inviteId);
+    case 'responder_entrevista': return answerInterview(s, rng, a.inviteId, a.index, a.answer);
     case 'encargar_encuesta': return orderPrivate(s, a.study, { regionId: a.region, cut: a.cut, area: a.area });
     case 'retirarse': {
       s.player.careerOver = true;

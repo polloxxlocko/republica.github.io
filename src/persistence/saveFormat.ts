@@ -4,7 +4,8 @@
 import type { GameState } from '../game/models/types';
 import { SCHEMA_VERSION } from '../game/scenarios/chile2026';
 import { emptyPolling } from '../game/polling';
-import { Rng } from '../game/engine/rng';
+import { initMedia } from '../game/media';
+import { Rng, seedRng } from '../game/engine/rng';
 import { initTerritory, initialMayors } from '../game/territory/init';
 import { emptyCareer } from '../game/career/capital';
 
@@ -97,7 +98,9 @@ export function validateGame(g: unknown): string[] {
 
 /** Recuperación de campos opcionales ausentes o corruptos (sin alterar lo esencial). */
 export function repairGame(g: GameState): GameState {
-  g.news ??= []; g.history ??= []; g.polls ??= []; g.polling ??= emptyPolling(); g.results ??= []; g.pending ??= []; g.crises ??= []; g.deferred ??= [];
+  g.news ??= []; g.history ??= []; g.polls ??= []; g.polling ??= emptyPolling();
+  if (!g.media) initMedia(g, new Rng(seedRng(g.settings.seed ?? 1)));
+  for (const n of g.news) n.outletId ??= 'elmercurio'; g.results ??= []; g.pending ??= []; g.crises ??= []; g.deferred ??= [];
   g.eventCooldowns ??= {}; g.eventCounts ??= {}; g.bills ??= []; g.economyHistory ??= []; g.opinionHistory ??= []; g.log ??= [];
   g.player.candidacies ??= []; g.player.achievements ??= []; g.player.lastActionResults ??= []; g.player.seenResultIds ??= [];
   g.career ??= emptyCareer();

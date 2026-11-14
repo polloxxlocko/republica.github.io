@@ -66,6 +66,14 @@ test.describe('REPÚBLICA: CHILE — recorrido de extremo a extremo', () => {
     await expect(page.locator('.recharts-surface').first()).toBeVisible();
     await page.getByRole('tab', { name: 'Estudios', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Encuesta CEP' })).toBeVisible();
+    // Prensa y medios: quiosco, comparador de coberturas y perfil documentado
+    await page.getByRole('navigation').getByRole('button', { name: 'Noticias', exact: true }).click();
+    await expect(page.getByRole('note').first()).toContainText('Cobertura simulada');
+    await page.getByRole('tab', { name: 'Comparador de coberturas' }).click();
+    await expect(page.getByLabel('Hecho a comparar')).toBeVisible();
+    await page.getByRole('tab', { name: 'Perfiles de medios' }).click();
+    await expect(page.locator('#perfil-medio')).toHaveText('El Mercurio');
+    await expect(page.getByText(/Informe 2026: Consumo de Noticias/).first()).toBeVisible();
     // Detalle de partido y hemiciclo
     await page.getByRole('navigation').getByRole('button', { name: 'Partidos', exact: true }).click();
     await page.getByTestId('ficha-UDI').click();

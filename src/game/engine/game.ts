@@ -24,6 +24,7 @@ import { fillVacancies, motionPublished, processBills, spawnMotions } from '../s
 import { inaugurate, isInaugurationWeek, onPolicyBillClosed, presidentDecision, weeklyGovernment } from '../systems/government';
 import { processEvents } from '../systems/events';
 import { weeklyPolling } from '../polling';
+import { mediaWeekly } from '../media';
 import { registerPresidentialField } from '../systems/elections';
 import { applyAction, leadsParty, me, weeklyPlayer, type PlayerAction } from '../systems/player';
 import { generateWeeklyNews } from '../systems/newsGen';
@@ -86,6 +87,7 @@ export function advanceWeek(prev: GameState, opts: { checkInvariants?: boolean }
   weeklyCareer(s, rng);
   const newOpportunities = s.career.opportunities.filter((o) => !oppsBefore.has(o.id)).map((o) => o.id);
   generateWeeklyNews(s, rng, snapshot);
+  mediaWeekly(s, rng);
   if (opts.checkInvariants) for (const v of checkInvariants(s)) s.log.push(`INVARIANTE: ${v}`);
   s.rng = rng.state;
   return { state: s, events: [...s.log], newResults, newDecisions: decisions, newOpportunities };

@@ -80,6 +80,18 @@ function Featured({ g }: { g: GameState }) {
       </article>
     );
   }
+  const inv = g.media?.invites.find((i) => i.status === 'pendiente' || i.status === 'aceptada');
+  if (inv) {
+    const j = g.media!.journalists.find((x) => x.id === inv.journalistId);
+    return (
+      <article className="panel border-l-4 border-l-burgundy p-5 sm:p-6">
+        <div className="kicker">{inv.status === 'aceptada' ? 'Entrevista en curso' : 'Invitación a entrevista'} · {outletName(inv.outletId, g)}</div>
+        <h2 className="mt-1 font-display text-[clamp(1.5rem,2.4vw,2rem)] font-semibold leading-tight text-ink-50">{j?.name ?? 'Periodista'} quiere entrevistarte</h2>
+        <p className="mt-2 max-w-[62ch] font-serif text-[17px] text-ink-200">{inv.reason} Una entrevista puede darte conocimiento, pero tu evaluación dependerá de cómo respondas.</p>
+        <button className="btn btn-primary mt-5" onClick={() => setScreen('noticias')}>Ir a la bandeja de entrevistas <ArrowRight size={15} aria-hidden /></button>
+      </article>
+    );
+  }
   const k = g.player.candidacies[0];
   if (k) {
     const ev = g.calendar.find((x) => x.id === k.electionId);
@@ -108,7 +120,7 @@ function Featured({ g }: { g: GameState }) {
   const n = g.news[0];
   return (
     <article className="panel border-l-4 border-l-ink-500 p-5 sm:p-6">
-      <div className="kicker">{n ? `${outletName(n.outletId)} · ${formatShort(weekToISO(g.startDate, n.week))}` : 'Semana tranquila'}</div>
+      <div className="kicker">{n ? `${outletName(n.outletId, g)} · ${formatShort(weekToISO(g.startDate, n.week))}` : 'Semana tranquila'}</div>
       <h2 className="mt-1 font-display text-[clamp(1.5rem,2.4vw,2rem)] font-semibold leading-tight text-ink-50">{n ? n.headline : 'Nada urgente en tu agenda'}</h2>
       <p className="mt-2 max-w-[62ch] font-serif text-[17px] text-ink-200">Una semana sin urgencias es una semana para construir: territorio, red y reputación no se improvisan en campaña.</p>
       <button className="btn btn-primary mt-5" onClick={() => setScreen('acciones')}>Organizar la semana <ArrowRight size={15} aria-hidden /></button>
@@ -220,12 +232,12 @@ export function CareerCenter() {
             </Section>
           )}
 
-          <Section title="Titulares" kicker="Prensa" right={<button className="btn-link" onClick={() => setScreen('noticias')}>Todas</button>}>
+          <Section title="Titulares" kicker="Prensa · cobertura simulada" right={<button className="btn-link" onClick={() => setScreen('noticias')}>Todas</button>}>
             {g.news.length === 0 ? <Empty>Aún no hay noticias.</Empty> : (
               <ul className="divide-y divide-ink-700">
                 {g.news.slice(0, ctx.stage === 'comienzo' ? 4 : 6).map((n) => (
                   <li key={n.id} className="py-2.5">
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-400"><span className="font-semibold uppercase tracking-wide text-burgundy">{outletName(n.outletId)}</span><span className="font-mono">{formatShort(weekToISO(g.startDate, n.week))}</span><span>· {n.category}</span></div>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-400"><span className="font-semibold uppercase tracking-wide text-burgundy">{outletName(n.outletId, g)}</span><span className="font-mono">{formatShort(weekToISO(g.startDate, n.week))}</span><span>· {n.category}</span></div>
                     <div className="font-serif text-[17px] leading-snug text-ink-50">{n.headline}</div>
                   </li>
                 ))}
